@@ -11,3 +11,6 @@ serde_json = "1"
 ic-cdk = "0.14"
 icrc-ledger-types = "0.1"
 ic-stable-structures = "0.6"
+
+email_address = "0.2"
+unicode-segmentation = "1"
