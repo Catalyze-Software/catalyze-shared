@@ -5,5 +5,9 @@ edition = "2021"
 
 [dependencies]
 candid = "0.10"
-ic-cdk = "0.14"
 serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+ic-cdk = "0.14"
+icrc-ledger-types = "0.1"
+ic-stable-structures = "0.6"
