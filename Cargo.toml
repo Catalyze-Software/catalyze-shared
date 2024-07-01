@@ -1,0 +1,20 @@
+[package]
+name = "catalyze-shared"
+version = "0.1.0"
+edition = "2021"
+license = "GPL"
+
+readme = "README.md"
+repository = "https://github.com/Catalyze-Software/catalyze-shared"
+
+[dependencies]
+candid = "0.10"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+ic-cdk = "0.14"
+icrc-ledger-types = "0.1"
+ic-stable-structures = "0.6"
+
+email_address = "0.2"
+unicode-segmentation = "1"
