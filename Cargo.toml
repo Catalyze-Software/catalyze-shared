@@ -2,6 +2,10 @@
 name = "catalyze-shared"
 version = "0.1.0"
 edition = "2021"
+license = "GPL"
+
+readme = "README.md"
+repository = "https://github.com/Catalyze-Software/catalyze-shared"
 
 [dependencies]
 candid = "0.10"
