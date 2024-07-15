@@ -10,6 +10,8 @@ use crate::{
         application_role::ApplicationRole, asset::Asset, date_range::DateRange,
         sort_direction::SortDirection,
     },
+    str::eq_str,
+    Filter, Sorter,
 };
 
 use super::{
@@ -312,16 +314,36 @@ impl ProfileResponse {
 
 #[derive(Clone, Debug, CandidType, Deserialize)]
 pub enum ProfileSort {
-    Username(SortDirection),
-    DisplayName(SortDirection),
-    FirstName(SortDirection),
-    LastName(SortDirection),
-    Email(SortDirection),
-    City(SortDirection),
-    StateOrProvince(SortDirection),
-    Country(SortDirection),
     CreatedOn(SortDirection),
     UpdatedOn(SortDirection),
+}
+
+impl Default for ProfileSort {
+    fn default() -> Self {
+        ProfileSort::CreatedOn(SortDirection::default())
+    }
+}
+
+impl Sorter<Principal, Profile> for ProfileSort {
+    fn sort(&self, profiles: Vec<(Principal, Profile)>) -> Vec<(Principal, Profile)> {
+        let mut profiles = profiles;
+
+        match self {
+            ProfileSort::CreatedOn(SortDirection::Asc) => {
+                profiles.sort_by(|a, b| a.1.created_on.cmp(&b.1.created_on))
+            }
+            ProfileSort::CreatedOn(SortDirection::Desc) => {
+                profiles.sort_by(|a, b| b.1.created_on.cmp(&a.1.created_on))
+            }
+            ProfileSort::UpdatedOn(SortDirection::Asc) => {
+                profiles.sort_by(|a, b| a.1.updated_on.cmp(&b.1.updated_on))
+            }
+            ProfileSort::UpdatedOn(SortDirection::Desc) => {
+                profiles.sort_by(|a, b| b.1.updated_on.cmp(&a.1.updated_on))
+            }
+        }
+        profiles
+    }
 }
 
 #[derive(Clone, Debug, CandidType, Deserialize)]
@@ -339,4 +361,26 @@ pub enum ProfileFilter {
     Interest(u32),
     Cause(u32),
     CreatedOn(DateRange),
+}
+
+impl Filter<Principal, Profile> for ProfileFilter {
+    fn matches(&self, _key: &Principal, value: &Profile) -> bool {
+        match self {
+            ProfileFilter::Username(username) => eq_str(&value.username, username),
+            ProfileFilter::DisplayName(display_name) => eq_str(&value.display_name, display_name),
+            ProfileFilter::FirstName(first_name) => eq_str(&value.first_name, first_name),
+            ProfileFilter::LastName(last_name) => eq_str(&value.last_name, last_name),
+            ProfileFilter::Email(email) => eq_str(&value.email, email),
+            ProfileFilter::City(city) => eq_str(&value.city, city),
+            ProfileFilter::StateOrProvince(state_or_province) => {
+                eq_str(&value.state_or_province, state_or_province)
+            }
+            ProfileFilter::Country(country) => eq_str(&value.country, country),
+            ProfileFilter::UpdatedOn(date_range) => date_range.is_within(value.updated_on),
+            ProfileFilter::Skill(skill) => value.skills.contains(skill),
+            ProfileFilter::Interest(interest) => value.interests.contains(interest),
+            ProfileFilter::Cause(cause) => value.causes.contains(cause),
+            ProfileFilter::CreatedOn(date_range) => date_range.is_within(value.created_on),
+        }
+    }
 }
