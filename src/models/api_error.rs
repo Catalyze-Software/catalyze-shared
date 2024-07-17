@@ -1,4 +1,4 @@
-use std::fmt;
+use std::fmt::{self, Display};
 
 use candid::CandidType;
 use ic_cdk::api::time;
@@ -68,25 +68,25 @@ impl ApiError {
         Self::new(ApiErrorType::Duplicate)
     }
 
-    pub fn add_tag<S: Into<String>>(mut self, tag: S) -> Self {
-        self.tag = Some(tag.into());
+    pub fn add_tag<S: Display>(mut self, tag: S) -> Self {
+        self.tag = Some(tag.to_string());
         self
     }
 
-    pub fn add_message<S: Into<String>>(mut self, message: S) -> Self {
-        self.message = Some(message.into());
+    pub fn add_message<S: Display>(mut self, message: S) -> Self {
+        self.message = Some(message.to_string());
         self
     }
 
-    pub fn add_info<S: Into<String>>(mut self, info: S) -> Self {
+    pub fn add_info<S: Display>(mut self, info: S) -> Self {
         let mut info_vec = self.info.unwrap_or_default();
-        info_vec.push(info.into());
+        info_vec.push(info.to_string());
         self.info = Some(info_vec);
         self
     }
 
-    pub fn add_method_name<S: Into<String>>(mut self, method_name: S) -> Self {
-        self.method_name = Some(method_name.into());
+    pub fn add_method_name<S: Display>(mut self, method_name: S) -> Self {
+        self.method_name = Some(method_name.to_string());
         self
     }
 }
