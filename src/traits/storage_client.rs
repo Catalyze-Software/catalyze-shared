@@ -1,6 +1,6 @@
 use candid::Principal;
 
-use crate::{helpers::icp::ic_call, CanisterResult};
+use crate::{helpers::ic_call::ic_call, CanisterResult};
 
 pub trait StorageClient<K, V, F>: Send + Sync
 where
