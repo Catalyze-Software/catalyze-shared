@@ -386,3 +386,9 @@ impl Filter<Principal, Profile> for ProfileFilter {
         }
     }
 }
+
+impl From<ProfileFilter> for Vec<ProfileFilter> {
+    fn from(val: ProfileFilter) -> Self {
+        vec![val]
+    }
+}

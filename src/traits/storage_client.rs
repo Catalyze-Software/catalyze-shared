@@ -2,7 +2,7 @@ use candid::Principal;
 
 use crate::{helpers::ic_call::ic_call, CanisterResult};
 
-pub trait StorageClient<K, V, F>: Send + Sync
+pub trait StorageClient<K, V, F>: Default + Send + Sync
 where
     K: candid::CandidType + for<'a> candid::Deserialize<'a> + Sync + Send,
     V: candid::CandidType + for<'a> candid::Deserialize<'a> + Sync + Send,
