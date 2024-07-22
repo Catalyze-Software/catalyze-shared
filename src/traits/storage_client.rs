@@ -10,6 +10,10 @@ where
 {
     fn canister(&self) -> CanisterResult<Principal>;
 
+    fn size(&self) -> impl std::future::Future<Output = CanisterResult<u64>> + Sync + Send {
+        async move { ic_call(self.canister()?, "size", ()).await }
+    }
+
     fn get(
         &self,
         id: K,

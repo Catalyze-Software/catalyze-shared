@@ -11,11 +11,10 @@ use crate::{
         sort_direction::SortDirection,
     },
     str::eq_str,
-    Filter, Sorter,
+    CanisterResult, Filter, Sorter,
 };
 
 use super::{
-    api_error::ApiError,
     document_details::DocumentDetails,
     profile_privacy::ProfilePrivacy,
     subject::Subject,
@@ -262,54 +261,52 @@ impl ProfileResponse {
         }
     }
 
-    pub fn from_result(
-        profile_result: Result<(Principal, Profile), ApiError>,
-    ) -> Result<Self, ApiError> {
-        match profile_result {
-            Err(err) => Err(err),
-            Ok((principal, profile)) => {
-                let wallets = profile
-                    .wallets
-                    .into_iter()
-                    .map(|(principal, wallet)| WalletResponse {
-                        provider: wallet.provider,
-                        principal,
-                        is_primary: wallet.is_primary,
-                    })
-                    .collect();
+    pub fn to_result(self) -> CanisterResult<Self> {
+        Ok(self)
+    }
+}
 
-                let result = Self {
-                    principal,
-                    username: profile.username,
-                    display_name: profile.display_name,
-                    about: profile.about,
-                    city: profile.city,
-                    country: profile.country,
-                    website: profile.website,
-                    skills: profile.skills,
-                    interests: profile.interests,
-                    causes: profile.causes,
-                    email: profile.email,
-                    application_role: profile.application_role,
-                    first_name: profile.first_name,
-                    last_name: profile.last_name,
-                    privacy: profile.privacy,
-                    date_of_birth: profile.date_of_birth,
-                    state_or_province: profile.state_or_province,
-                    profile_image: profile.profile_image,
-                    banner_image: profile.banner_image,
-                    code_of_conduct: profile.code_of_conduct,
-                    privacy_policy: profile.privacy_policy,
-                    terms_of_service: profile.terms_of_service,
-                    wallets,
-                    extra: profile.extra,
-                    updated_on: profile.updated_on,
-                    created_on: profile.created_on,
-                    pinned: profile.pinned,
-                    starred: profile.starred,
-                };
-                Ok(result)
-            }
+impl From<ProfileEntry> for ProfileResponse {
+    fn from((principal, profile): ProfileEntry) -> Self {
+        let wallets = profile
+            .wallets
+            .into_iter()
+            .map(|(principal, wallet)| WalletResponse {
+                provider: wallet.provider,
+                principal,
+                is_primary: wallet.is_primary,
+            })
+            .collect();
+
+        Self {
+            principal,
+            username: profile.username,
+            display_name: profile.display_name,
+            about: profile.about,
+            city: profile.city,
+            country: profile.country,
+            website: profile.website,
+            skills: profile.skills,
+            interests: profile.interests,
+            causes: profile.causes,
+            email: profile.email,
+            application_role: profile.application_role,
+            first_name: profile.first_name,
+            last_name: profile.last_name,
+            privacy: profile.privacy,
+            date_of_birth: profile.date_of_birth,
+            state_or_province: profile.state_or_province,
+            profile_image: profile.profile_image,
+            banner_image: profile.banner_image,
+            code_of_conduct: profile.code_of_conduct,
+            privacy_policy: profile.privacy_policy,
+            terms_of_service: profile.terms_of_service,
+            wallets,
+            pinned: profile.pinned,
+            starred: profile.starred,
+            extra: profile.extra,
+            updated_on: profile.updated_on,
+            created_on: profile.created_on,
         }
     }
 }
