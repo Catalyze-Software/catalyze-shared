@@ -64,6 +64,13 @@ where
         async move { ic_call(self.canister()?, "update", (key, value)).await }
     }
 
+    fn update_many(
+        &self,
+        list: Vec<(K, V)>,
+    ) -> impl std::future::Future<Output = CanisterResult<Vec<(K, V)>>> + Sync + Send {
+        async move { ic_call(self.canister()?, "update_many", (list,)).await }
+    }
+
     fn remove(
         &self,
         key: K,
