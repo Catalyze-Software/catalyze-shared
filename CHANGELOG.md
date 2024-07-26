@@ -7,3 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Entry types for known storage models
+
+### Changed
+
+- Bump `ic-cdk` crate to version `0.15`

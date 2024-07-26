@@ -35,3 +35,5 @@ impl EventCollection {
         self.events.contains(id)
     }
 }
+
+pub type EventCollectionEntry = (u64, EventCollection);

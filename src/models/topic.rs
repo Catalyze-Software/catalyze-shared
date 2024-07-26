@@ -29,6 +29,8 @@ pub struct Topic {
     pub value: String,
 }
 
+pub type TopicEntry = (u64, Topic);
+
 impl From<((u64, String), TopicKind)> for Topic {
     fn from(((id, value), kind): ((u64, String), TopicKind)) -> Self {
         Self { id, kind, value }

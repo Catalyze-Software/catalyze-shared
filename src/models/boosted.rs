@@ -47,3 +47,5 @@ impl Boost {
         self.notification_id = None;
     }
 }
+
+pub type BoostedEntry = (u64, Boost);

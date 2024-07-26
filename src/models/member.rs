@@ -162,6 +162,8 @@ impl Member {
     }
 }
 
+pub type MemberEntry = (Principal, Member);
+
 #[derive(CandidType, Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct Join {
     pub roles: Vec<String>,

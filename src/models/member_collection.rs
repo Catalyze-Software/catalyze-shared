@@ -65,3 +65,5 @@ impl MemberCollection {
         self.add_member(principal);
     }
 }
+
+pub type MemberCollectionEntry = (u64, MemberCollection);

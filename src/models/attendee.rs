@@ -101,6 +101,8 @@ impl Attendee {
     }
 }
 
+pub type AttendeeEntry = (Principal, Attendee);
+
 #[derive(Clone, Debug, CandidType, Deserialize, Serialize)]
 pub struct AttendeeJoin {
     pub group_id: u64,
