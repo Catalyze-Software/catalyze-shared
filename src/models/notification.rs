@@ -63,6 +63,8 @@ impl Notification {
     }
 }
 
+pub type NotificationEntry = (u64, Notification);
+
 #[derive(CandidType, Deserialize, Serialize, Clone, Debug)]
 pub enum NotificationType {
     Relation(RelationNotificationType),

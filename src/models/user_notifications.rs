@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use candid::CandidType;
+use candid::{CandidType, Principal};
 use serde::{Deserialize, Serialize};
 
 use crate::impl_storable_for;
@@ -118,3 +118,5 @@ impl UserNotifications {
         self.0.clone().into_keys().collect()
     }
 }
+
+pub type UserNotificationsEntry = (Principal, UserNotifications);

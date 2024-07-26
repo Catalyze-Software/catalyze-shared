@@ -165,6 +165,8 @@ impl Group {
     }
 }
 
+pub type GroupEntry = (u64, Group);
+
 #[derive(Clone, CandidType, Deserialize)]
 pub struct PostGroup {
     pub name: String,

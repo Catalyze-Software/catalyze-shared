@@ -134,6 +134,8 @@ impl Default for Event {
     }
 }
 
+pub type EventEntry = (u64, Event);
+
 #[derive(Clone, Debug, CandidType, Deserialize)]
 pub struct PostEvent {
     name: String,

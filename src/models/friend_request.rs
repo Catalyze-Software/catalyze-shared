@@ -35,6 +35,8 @@ impl FriendRequest {
     }
 }
 
+pub type FriendRequestEntry = (u64, FriendRequest);
+
 #[derive(CandidType, Deserialize, Serialize, Clone, Debug)]
 pub struct FriendRequestResponse {
     pub id: u64,

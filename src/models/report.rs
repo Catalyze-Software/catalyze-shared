@@ -61,6 +61,8 @@ impl Report {
     }
 }
 
+pub type ReportEntry = (u64, Report);
+
 #[derive(Clone, Debug, CandidType, Deserialize, Serialize)]
 pub struct PostReport {
     pub subject: Subject,
