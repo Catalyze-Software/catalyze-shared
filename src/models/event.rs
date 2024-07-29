@@ -196,6 +196,12 @@ pub enum EventSort {
     EndDate(SortDirection),
 }
 
+impl Default for EventSort {
+    fn default() -> Self {
+        EventSort::CreatedOn(SortDirection::default())
+    }
+}
+
 impl Sorter<u64, Event> for EventSort {
     fn sort(&self, events: Vec<(u64, Event)>) -> Vec<(u64, Event)> {
         let mut events: Vec<(u64, Event)> = events.into_iter().collect();
