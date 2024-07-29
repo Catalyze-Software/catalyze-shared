@@ -10,6 +10,7 @@ use crate::{
         asset::Asset, date_range::DateRange, location::Location, privacy::Privacy,
         sort_direction::SortDirection,
     },
+    Filter, Sorter,
 };
 
 use super::{
@@ -195,34 +196,24 @@ pub enum EventSort {
     EndDate(SortDirection),
 }
 
-impl EventSort {
-    pub fn sort(&self, events: HashMap<u64, Event>) -> Vec<(u64, Event)> {
+impl Sorter<u64, Event> for EventSort {
+    fn sort(&self, events: Vec<(u64, Event)>) -> Vec<(u64, Event)> {
         let mut events: Vec<(u64, Event)> = events.into_iter().collect();
+        use EventSort::*;
+        use SortDirection::*;
         match self {
-            EventSort::CreatedOn(SortDirection::Asc) => {
-                events.sort_by(|a, b| a.1.created_on.cmp(&b.1.created_on))
-            }
-            EventSort::CreatedOn(SortDirection::Desc) => {
-                events.sort_by(|a, b| b.1.created_on.cmp(&a.1.created_on))
-            }
-            EventSort::UpdatedOn(SortDirection::Asc) => {
-                events.sort_by(|a, b| a.1.updated_on.cmp(&b.1.updated_on))
-            }
-            EventSort::UpdatedOn(SortDirection::Desc) => {
-                events.sort_by(|a, b| b.1.updated_on.cmp(&a.1.updated_on))
-            }
-            EventSort::StartDate(SortDirection::Asc) => {
+            CreatedOn(Asc) => events.sort_by(|a, b| a.1.created_on.cmp(&b.1.created_on)),
+            CreatedOn(Desc) => events.sort_by(|a, b| b.1.created_on.cmp(&a.1.created_on)),
+            UpdatedOn(Asc) => events.sort_by(|a, b| a.1.updated_on.cmp(&b.1.updated_on)),
+            UpdatedOn(Desc) => events.sort_by(|a, b| b.1.updated_on.cmp(&a.1.updated_on)),
+            StartDate(Asc) => {
                 events.sort_by(|a, b| a.1.date.start_date().cmp(&b.1.date.start_date()))
             }
-            EventSort::StartDate(SortDirection::Desc) => {
+            StartDate(Desc) => {
                 events.sort_by(|a, b| b.1.date.start_date().cmp(&a.1.date.start_date()))
             }
-            EventSort::EndDate(SortDirection::Asc) => {
-                events.sort_by(|a, b| a.1.date.end_date().cmp(&b.1.date.end_date()))
-            }
-            EventSort::EndDate(SortDirection::Desc) => {
-                events.sort_by(|a, b| b.1.date.end_date().cmp(&a.1.date.end_date()))
-            }
+            EndDate(Asc) => events.sort_by(|a, b| a.1.date.end_date().cmp(&b.1.date.end_date())),
+            EndDate(Desc) => events.sort_by(|a, b| b.1.date.end_date().cmp(&a.1.date.end_date())),
         }
         events
     }
@@ -244,26 +235,27 @@ pub enum EventFilter {
     CreatedOn(DateRange),
 }
 
-impl EventFilter {
-    pub fn is_match(&self, id: &u64, event: &Event) -> bool {
+impl Filter<u64, Event> for EventFilter {
+    fn matches(&self, id: &u64, event: &Event) -> bool {
+        use EventFilter::*;
         match self {
-            EventFilter::None => true,
-            EventFilter::Name(name) => event.name.to_lowercase().contains(&name.to_lowercase()),
-            EventFilter::StartDate(date) => {
+            None => true,
+            Name(name) => event.name.to_lowercase().contains(&name.to_lowercase()),
+            StartDate(date) => {
                 if date.is_within(time()) {
                     return true;
                 }
 
                 date.is_within(event.date.start_date())
             }
-            EventFilter::EndDate(date) => date.is_within(event.date.end_date()),
-            EventFilter::Owner(owner) => *owner == event.owner,
-            EventFilter::Groups(groups) => groups.contains(&event.group_id),
-            EventFilter::Ids(ids) => ids.contains(id),
-            EventFilter::Tag(tag) => event.tags.contains(tag),
-            EventFilter::IsCanceled(is_canceled) => event.is_canceled.0 == *is_canceled,
-            EventFilter::UpdatedOn(date) => date.is_within(event.updated_on),
-            EventFilter::CreatedOn(date) => date.is_within(event.created_on),
+            EndDate(date) => date.is_within(event.date.end_date()),
+            Owner(owner) => *owner == event.owner,
+            Groups(groups) => groups.contains(&event.group_id),
+            Ids(ids) => ids.contains(id),
+            Tag(tag) => event.tags.contains(tag),
+            IsCanceled(is_canceled) => event.is_canceled.0 == *is_canceled,
+            UpdatedOn(date) => date.is_within(event.updated_on),
+            CreatedOn(date) => date.is_within(event.created_on),
         }
     }
 }
@@ -348,5 +340,11 @@ impl EventResponse {
             Err(e) => Err(e),
             Ok(event) => Ok(Self::new(id, event, boosted, caller_data, attendee_count)),
         }
+    }
+}
+
+impl From<EventFilter> for Vec<EventFilter> {
+    fn from(val: EventFilter) -> Self {
+        vec![val]
     }
 }

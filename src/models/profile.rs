@@ -327,19 +327,13 @@ impl Sorter<Principal, Profile> for ProfileSort {
     fn sort(&self, profiles: Vec<(Principal, Profile)>) -> Vec<(Principal, Profile)> {
         let mut profiles = profiles;
 
+        use ProfileSort::*;
+        use SortDirection::*;
         match self {
-            ProfileSort::CreatedOn(SortDirection::Asc) => {
-                profiles.sort_by(|a, b| a.1.created_on.cmp(&b.1.created_on))
-            }
-            ProfileSort::CreatedOn(SortDirection::Desc) => {
-                profiles.sort_by(|a, b| b.1.created_on.cmp(&a.1.created_on))
-            }
-            ProfileSort::UpdatedOn(SortDirection::Asc) => {
-                profiles.sort_by(|a, b| a.1.updated_on.cmp(&b.1.updated_on))
-            }
-            ProfileSort::UpdatedOn(SortDirection::Desc) => {
-                profiles.sort_by(|a, b| b.1.updated_on.cmp(&a.1.updated_on))
-            }
+            CreatedOn(Asc) => profiles.sort_by(|a, b| a.1.created_on.cmp(&b.1.created_on)),
+            CreatedOn(Desc) => profiles.sort_by(|a, b| b.1.created_on.cmp(&a.1.created_on)),
+            UpdatedOn(Asc) => profiles.sort_by(|a, b| a.1.updated_on.cmp(&b.1.updated_on)),
+            UpdatedOn(Desc) => profiles.sort_by(|a, b| b.1.updated_on.cmp(&a.1.updated_on)),
         }
         profiles
     }
@@ -364,22 +358,23 @@ pub enum ProfileFilter {
 
 impl Filter<Principal, Profile> for ProfileFilter {
     fn matches(&self, _key: &Principal, value: &Profile) -> bool {
+        use ProfileFilter::*;
         match self {
-            ProfileFilter::Username(username) => eq_str(&value.username, username),
-            ProfileFilter::DisplayName(display_name) => eq_str(&value.display_name, display_name),
-            ProfileFilter::FirstName(first_name) => eq_str(&value.first_name, first_name),
-            ProfileFilter::LastName(last_name) => eq_str(&value.last_name, last_name),
-            ProfileFilter::Email(email) => eq_str(&value.email, email),
-            ProfileFilter::City(city) => eq_str(&value.city, city),
-            ProfileFilter::StateOrProvince(state_or_province) => {
+            Username(username) => eq_str(&value.username, username),
+            DisplayName(display_name) => eq_str(&value.display_name, display_name),
+            FirstName(first_name) => eq_str(&value.first_name, first_name),
+            LastName(last_name) => eq_str(&value.last_name, last_name),
+            Email(email) => eq_str(&value.email, email),
+            City(city) => eq_str(&value.city, city),
+            StateOrProvince(state_or_province) => {
                 eq_str(&value.state_or_province, state_or_province)
             }
-            ProfileFilter::Country(country) => eq_str(&value.country, country),
-            ProfileFilter::UpdatedOn(date_range) => date_range.is_within(value.updated_on),
-            ProfileFilter::Skill(skill) => value.skills.contains(skill),
-            ProfileFilter::Interest(interest) => value.interests.contains(interest),
-            ProfileFilter::Cause(cause) => value.causes.contains(cause),
-            ProfileFilter::CreatedOn(date_range) => date_range.is_within(value.created_on),
+            Country(country) => eq_str(&value.country, country),
+            UpdatedOn(date_range) => date_range.is_within(value.updated_on),
+            Skill(skill) => value.skills.contains(skill),
+            Interest(interest) => value.interests.contains(interest),
+            Cause(cause) => value.causes.contains(cause),
+            CreatedOn(date_range) => date_range.is_within(value.created_on),
         }
     }
 }
