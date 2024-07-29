@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 use candid::{CandidType, Deserialize, Principal};
 use ic_cdk::{api::time, caller};
 use serde::Serialize;
