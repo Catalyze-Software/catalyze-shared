@@ -18,7 +18,6 @@ use super::{
     api_error::ApiError,
     boosted::Boost,
     member::{InviteMemberResponse, JoinedMemberResponse},
-    member_collection::MemberCollection,
     permission::Permission,
     relation_type::RelationType,
 };
