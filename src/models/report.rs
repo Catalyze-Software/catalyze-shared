@@ -8,6 +8,7 @@ use serde::Serialize;
 use crate::{
     impl_storable_for,
     models::{date_range::DateRange, sort_direction::SortDirection},
+    Filter, Sorter,
 };
 
 use super::{
@@ -115,8 +116,8 @@ impl Default for ReportSort {
     }
 }
 
-impl ReportSort {
-    pub fn sort(&self, reports: HashMap<u64, Report>) -> Vec<(u64, Report)> {
+impl Sorter<u64, Report> for ReportSort {
+    fn sort(&self, reports: Vec<(u64, Report)>) -> Vec<(u64, Report)> {
         let mut reports: Vec<(u64, Report)> = reports.into_iter().collect();
         use ReportSort::*;
         use SortDirection::*;
@@ -153,8 +154,8 @@ pub enum ReportFilter {
     ReportedBy(Principal),
 }
 
-impl ReportFilter {
-    pub fn is_match(&self, _id: &u64, report: &Report) -> bool {
+impl Filter<u64, Report> for ReportFilter {
+    fn matches(&self, _id: &u64, report: &Report) -> bool {
         use crate::models::subject::Subject;
         use crate::models::subject::SubjectType;
         use ReportFilter::*;
@@ -176,5 +177,11 @@ impl ReportFilter {
             ReportedBy(principal) => principal == &report.reported_by,
             GroupId(group_id) => group_id == &report.group_id.unwrap_or_default(),
         }
+    }
+}
+
+impl From<ReportFilter> for Vec<ReportFilter> {
+    fn from(val: ReportFilter) -> Self {
+        vec![val]
     }
 }

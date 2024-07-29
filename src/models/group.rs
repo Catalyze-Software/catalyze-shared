@@ -11,6 +11,7 @@ use crate::{
         asset::Asset, date_range::DateRange, location::Location, privacy::Privacy, role::Role,
         sort_direction::SortDirection,
     },
+    Filter, Sorter,
 };
 
 use super::{
@@ -307,7 +308,7 @@ pub enum GroupSort {
     Name(SortDirection),
     CreatedOn(SortDirection),
     UpdatedOn(SortDirection),
-    MemberCount(SortDirection),
+    // MemberCount(SortDirection),
 }
 
 impl Default for GroupSort {
@@ -316,12 +317,8 @@ impl Default for GroupSort {
     }
 }
 
-impl GroupSort {
-    pub fn sort(
-        &self,
-        groups: HashMap<u64, Group>,
-        group_members: HashMap<u64, MemberCollection>,
-    ) -> Vec<(u64, Group)> {
+impl Sorter<u64, Group> for GroupSort {
+    fn sort(&self, groups: Vec<(u64, Group)>) -> Vec<(u64, Group)> {
         let mut groups: Vec<(u64, Group)> = groups.into_iter().collect();
         use GroupSort::*;
         use SortDirection::*;
@@ -336,28 +333,28 @@ impl GroupSort {
             CreatedOn(Desc) => groups.sort_by(|(_, a), (_, b)| b.created_on.cmp(&a.created_on)),
             UpdatedOn(Asc) => groups.sort_by(|(_, a), (_, b)| a.updated_on.cmp(&b.updated_on)),
             UpdatedOn(Desc) => groups.sort_by(|(_, a), (_, b)| b.updated_on.cmp(&a.updated_on)),
-            MemberCount(Asc) => groups.sort_by(|(a_id, _), (b_id, _)| {
-                let a_members = group_members
-                    .get(a_id)
-                    .map(|m| m.get_member_count())
-                    .unwrap_or(0);
-                let b_members = group_members
-                    .get(b_id)
-                    .map(|m| m.get_member_count())
-                    .unwrap_or(0);
-                a_members.cmp(&b_members)
-            }),
-            MemberCount(Desc) => groups.sort_by(|(a_id, _), (b_id, _)| {
-                let a_members = group_members
-                    .get(a_id)
-                    .map(|m| m.get_member_count())
-                    .unwrap_or(0);
-                let b_members = group_members
-                    .get(b_id)
-                    .map(|m| m.get_member_count())
-                    .unwrap_or(0);
-                b_members.cmp(&a_members)
-            }),
+            // MemberCount(Asc) => groups.sort_by(|(a_id, _), (b_id, _)| {
+            //     let a_members = group_members
+            //         .get(a_id)
+            //         .map(|m| m.get_member_count())
+            //         .unwrap_or(0);
+            //     let b_members = group_members
+            //         .get(b_id)
+            //         .map(|m| m.get_member_count())
+            //         .unwrap_or(0);
+            //     a_members.cmp(&b_members)
+            // }),
+            // MemberCount(Desc) => groups.sort_by(|(a_id, _), (b_id, _)| {
+            //     let a_members = group_members
+            //         .get(a_id)
+            //         .map(|m| m.get_member_count())
+            //         .unwrap_or(0);
+            //     let b_members = group_members
+            //         .get(b_id)
+            //         .map(|m| m.get_member_count())
+            //         .unwrap_or(0);
+            //     b_members.cmp(&a_members)
+            // }),
         }
         groups
     }
@@ -384,22 +381,23 @@ pub enum GroupFilter {
     CreatedOn(DateRange),
 }
 
-impl GroupFilter {
-    pub fn is_match(&self, id: &u64, group: &Group) -> bool {
+impl Filter<u64, Group> for GroupFilter {
+    fn matches(&self, id: &u64, group: &Group) -> bool {
+        use GroupFilter::*;
         match self {
-            GroupFilter::None => true,
-            GroupFilter::Name(name) => group.name.to_lowercase().contains(&name.to_lowercase()),
-            GroupFilter::Owner(owner) => group.owner == *owner,
-            GroupFilter::Ids(ids) => ids.contains(id),
-            GroupFilter::Tag(tag) => group.tags.contains(tag),
-            GroupFilter::UpdatedOn(range) => {
+            None => true,
+            Name(name) => group.name.to_lowercase().contains(&name.to_lowercase()),
+            Owner(owner) => group.owner == *owner,
+            Ids(ids) => ids.contains(id),
+            Tag(tag) => group.tags.contains(tag),
+            UpdatedOn(range) => {
                 if range.end_date() > 0 {
                     range.is_within(group.updated_on)
                 } else {
                     range.is_after_start_date(group.updated_on)
                 }
             }
-            GroupFilter::CreatedOn(range) => {
+            CreatedOn(range) => {
                 if range.end_date() > 0 {
                     range.is_within(group.updated_on)
                 } else {
@@ -407,5 +405,11 @@ impl GroupFilter {
                 }
             }
         }
+    }
+}
+
+impl From<GroupFilter> for Vec<GroupFilter> {
+    fn from(val: GroupFilter) -> Self {
+        vec![val]
     }
 }
