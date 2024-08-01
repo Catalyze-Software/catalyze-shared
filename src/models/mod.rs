@@ -4,6 +4,8 @@ pub mod asset;
 pub mod boosted;
 pub mod date_range;
 pub mod filter_type;
+pub mod group_with_members;
+pub mod history_event;
 pub mod location;
 pub mod notification;
 pub mod paged_response;
@@ -13,8 +15,6 @@ pub mod sort_direction;
 pub mod storage;
 pub mod validation;
 pub mod wallet;
-
-pub mod history_event;
 
 pub mod document_details;
 pub mod identifier;
