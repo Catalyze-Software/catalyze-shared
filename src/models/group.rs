@@ -12,7 +12,7 @@ use crate::{
 
 use super::{
     group_with_members::{PostGroup, UpdateGroup},
-    member::{InviteMemberResponse, JoinedMemberResponse},
+    old_member::{InviteMemberResponse, JoinedMemberResponse},
     permission::Permission,
     relation_type::RelationType,
 };

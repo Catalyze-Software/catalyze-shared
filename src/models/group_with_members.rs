@@ -6,7 +6,7 @@ use serde::Serialize;
 
 use crate::{
     impl_storable_for,
-    misc::role_misc::{default_roles, ADMIN_ROLE, MEMBER_ROLE, MODERATOR_ROLE, OWNER_ROLE},
+    misc::role_misc::default_roles,
     models::{
         asset::Asset, date_range::DateRange, location::Location, privacy::Privacy, role::Role,
         sort_direction::SortDirection,
@@ -15,7 +15,11 @@ use crate::{
 };
 
 use super::{
-    api_error::ApiError, boosted::Boost, invite_type::InviteType, permission::Permission,
+    api_error::ApiError,
+    boosted::Boost,
+    invite_type::InviteType,
+    member::{Invite, Join},
+    permission::Permission,
     relation_type::RelationType,
 };
 
@@ -40,8 +44,9 @@ pub struct GroupWithMembers {
     pub notification_id: Option<u64>,
     pub special_members: HashMap<Principal, String>,
     pub wallets: HashMap<Principal, String>,
-    pub members: HashMap<Principal, GroupMember>,
-    pub invites: HashMap<Principal, GroupInvite>,
+    pub members: HashMap<Principal, Join>,
+    pub invites: HashMap<Principal, Invite>,
+    pub events: Vec<u64>,
     pub updated_on: u64,
     pub created_on: u64,
 }
@@ -64,12 +69,13 @@ impl Default for GroupWithMembers {
             roles: Vec::default(),
             is_deleted: Default::default(),
             notification_id: Default::default(),
-            updated_on: Default::default(),
-            created_on: Default::default(),
             privacy_gated_type_amount: Default::default(),
             special_members: Default::default(),
             members: Default::default(),
             invites: Default::default(),
+            events: Default::default(),
+            updated_on: Default::default(),
+            created_on: Default::default(),
         }
     }
 }
@@ -98,6 +104,7 @@ impl GroupWithMembers {
             special_members: HashMap::default(),
             members: Default::default(),
             invites: Default::default(),
+            events: Default::default(),
         }
     }
 
@@ -116,7 +123,7 @@ impl GroupWithMembers {
 
     pub fn set_owner(&mut self, owner: Principal) -> Self {
         self.owner = owner;
-        self.members = HashMap::from_iter([(caller(), GroupMember::default().set_owner_role())]);
+        self.members = HashMap::from_iter([(caller(), Join::default().set_owner_role())]);
         self.updated_on = time();
         self.clone()
     }
@@ -136,7 +143,7 @@ impl GroupWithMembers {
     }
 
     pub fn add_member(&mut self, member: Principal) {
-        self.members.insert(member, GroupMember::default());
+        self.members.insert(member, Join::default());
     }
 
     pub fn set_member_role(&mut self, member: Principal, role: String) {
@@ -157,7 +164,7 @@ impl GroupWithMembers {
     ) {
         self.invites.insert(
             member,
-            GroupInvite {
+            Invite {
                 notification_id,
                 invite_type,
                 updated_at: time(),
@@ -172,8 +179,20 @@ impl GroupWithMembers {
 
     pub fn convert_invite_to_member(&mut self, principal: Principal) {
         if self.invites.remove(&principal).is_some() {
-            self.members.insert(principal, GroupMember::default());
+            self.members.insert(principal, Join::default());
         }
+    }
+
+    pub fn get_event_ids(&self) -> Vec<u64> {
+        self.events.clone()
+    }
+
+    pub fn add_event(&mut self, event_id: u64) {
+        self.events.push(event_id);
+    }
+
+    pub fn remove_event(&mut self, event_id: u64) {
+        self.events.retain(|&id| id != event_id);
     }
 
     pub fn get_roles(&self) -> Vec<Role> {
@@ -247,49 +266,6 @@ pub struct UpdateGroup {
     pub tags: Vec<u32>,
 }
 
-#[derive(CandidType, Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
-pub struct GroupMember {
-    pub roles: Vec<String>,
-    pub updated_at: u64,
-    pub created_at: u64,
-}
-
-impl Default for GroupMember {
-    fn default() -> Self {
-        Self {
-            roles: vec![MEMBER_ROLE.into()],
-            updated_at: time(),
-            created_at: time(),
-        }
-    }
-}
-
-impl GroupMember {
-    pub fn set_owner_role(&mut self) -> Self {
-        Self {
-            roles: vec![(OWNER_ROLE.into())],
-            updated_at: time(),
-            created_at: time(),
-        }
-    }
-
-    pub fn set_role(&mut self, role: String) {
-        if ![ADMIN_ROLE, MODERATOR_ROLE, MEMBER_ROLE].contains(&role.as_str()) {
-            return;
-        }
-        self.roles = vec![role];
-        self.updated_at = time();
-    }
-}
-
-#[derive(Clone, Debug, CandidType, Deserialize, Serialize)]
-pub struct GroupInvite {
-    pub notification_id: Option<u64>,
-    pub invite_type: InviteType,
-    pub updated_at: u64,
-    pub created_at: u64,
-}
-
 #[derive(Clone, CandidType, Serialize, Deserialize, Debug)]
 pub struct GroupResponse {
     pub id: u64,
@@ -316,13 +292,7 @@ pub struct GroupResponse {
 }
 
 impl GroupResponse {
-    pub fn new(
-        id: u64,
-        group: GroupWithMembers,
-        boosted: Option<Boost>,
-        events_count: u64,
-        members_count: u64,
-    ) -> Self {
+    pub fn new(id: u64, group: GroupWithMembers, boosted: Option<Boost>) -> Self {
         let mut roles = default_roles();
         roles.append(&mut group.roles.clone());
         Self {
@@ -345,20 +315,18 @@ impl GroupResponse {
             boosted,
             updated_on: group.updated_on,
             created_on: group.created_on,
-            events_count,
-            members_count,
+            events_count: group.events.len() as u64,
+            members_count: group.members.len() as u64,
         }
     }
 
     pub fn from_result(
         group_result: Result<(u64, GroupWithMembers), ApiError>,
         boosted: Option<Boost>,
-        events_count: u64,
-        members_count: u64,
     ) -> Result<Self, ApiError> {
         match group_result {
             Err(err) => Err(err),
-            Ok((id, group)) => Ok(Self::new(id, group, boosted, events_count, members_count)),
+            Ok((id, group)) => Ok(Self::new(id, group, boosted)),
         }
     }
 }

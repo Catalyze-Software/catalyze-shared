@@ -9,7 +9,7 @@ use crate::impl_storable_for;
 use super::{
     attendee::{InviteAttendeeResponse, JoinedAttendeeResponse},
     friend_request::FriendRequestResponse,
-    member::{InviteMemberResponse, JoinedMemberResponse},
+    old_member::{InviteMemberResponse, JoinedMemberResponse},
     transaction_data::{TransactionCompleteData, TransactionData},
     user_notifications::UserNotificationData,
 };
