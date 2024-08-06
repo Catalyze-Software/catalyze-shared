@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Entry types for known storage models
 - `filter` implementation for storage models
 - `sorter` implementation for storage models
+- `get_paginated` and `filter_paginated` method implementations for the storage client
 
 ### Changed
 

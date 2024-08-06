@@ -1,12 +1,22 @@
 use candid::Principal;
 
-use crate::{helpers::ic_call::ic_call, CanisterResult};
+use crate::{helpers::ic_call::ic_call, paged_response::PagedResponse, CanisterResult};
 
-pub trait StorageClient<K, V, F>: Default + Send + Sync
+use super::{Filter, Sorter};
+
+pub trait StorageClient<K, V, F, S>: Default + Send + Sync
 where
-    K: candid::CandidType + for<'a> candid::Deserialize<'a> + Sync + Send,
+    K: 'static
+        + candid::CandidType
+        + for<'a> candid::Deserialize<'a>
+        + std::hash::Hash
+        + Ord
+        + Clone
+        + Send
+        + Sync,
     V: candid::CandidType + for<'a> candid::Deserialize<'a> + Sync + Send,
-    F: candid::CandidType + Clone + Sync + Send,
+    F: Filter<K, V> + candid::CandidType + Clone + Send + Sync,
+    S: Sorter<K, V> + Default + candid::CandidType + Clone + Send + Sync,
 {
     fn canister(&self) -> CanisterResult<Principal>;
 
@@ -34,6 +44,19 @@ where
         async move { ic_call(self.canister()?, "get_all", ()).await }
     }
 
+    fn get_paginated(
+        &self,
+        limit: usize,
+        page: usize,
+        sort: S,
+    ) -> impl std::future::Future<Output = CanisterResult<PagedResponse<(K, V)>>> + Sync + Send
+    {
+        async move {
+            let args = (limit, page, sort);
+            ic_call(self.canister()?, "get_paginated", args).await
+        }
+    }
+
     fn find(
         &self,
         filters: Vec<F>,
@@ -46,6 +69,20 @@ where
         filters: Vec<F>,
     ) -> impl std::future::Future<Output = CanisterResult<Vec<(K, V)>>> + Sync + Send {
         async move { ic_call(self.canister()?, "filter", (filters,)).await }
+    }
+
+    fn filter_paginated(
+        &self,
+        limit: usize,
+        page: usize,
+        sort: S,
+        filters: Vec<F>,
+    ) -> impl std::future::Future<Output = CanisterResult<PagedResponse<(K, V)>>> + Sync + Send
+    {
+        async move {
+            let args = (limit, page, sort, filters);
+            ic_call(self.canister()?, "filter_paginated", args).await
+        }
     }
 
     fn update(
@@ -78,10 +115,11 @@ where
     }
 }
 
-pub trait StorageClientInsertable<V, F>: StorageClient<u64, V, F>
+pub trait StorageClientInsertable<V, F, S>: StorageClient<u64, V, F, S>
 where
     V: candid::CandidType + for<'a> candid::Deserialize<'a> + Sync + Send,
-    F: candid::CandidType + Clone + Sync + Send,
+    F: Filter<u64, V> + candid::CandidType + Clone + Send + Sync,
+    S: Sorter<u64, V> + Default + candid::CandidType + Clone + Send + Sync,
 {
     fn insert(
         &self,
@@ -91,11 +129,19 @@ where
     }
 }
 
-pub trait StorageClientInsertableByKey<K, V, F>: StorageClient<K, V, F>
+pub trait StorageClientInsertableByKey<K, V, F, S>: StorageClient<K, V, F, S>
 where
-    K: candid::CandidType + for<'a> candid::Deserialize<'a> + Sync + Send,
+    K: 'static
+        + candid::CandidType
+        + for<'a> candid::Deserialize<'a>
+        + std::hash::Hash
+        + Ord
+        + Clone
+        + Send
+        + Sync,
     V: candid::CandidType + for<'a> candid::Deserialize<'a> + Sync + Send,
-    F: candid::CandidType + Clone + Sync + Send,
+    F: Filter<K, V> + candid::CandidType + Clone + Send + Sync,
+    S: Sorter<K, V> + Default + candid::CandidType + Clone + Send + Sync,
 {
     fn insert(
         &self,
