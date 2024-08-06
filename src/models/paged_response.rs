@@ -3,11 +3,11 @@ use serde::Serialize;
 
 #[derive(CandidType, Debug, Serialize, Deserialize)]
 pub struct PagedResponse<T> {
-    page: usize,
-    limit: usize,
-    total: usize,
-    number_of_pages: usize,
-    data: Vec<T>,
+    pub page: usize,
+    pub limit: usize,
+    pub total: usize,
+    pub number_of_pages: usize,
+    pub data: Vec<T>,
 }
 
 impl<T: Clone> PagedResponse<T> {
