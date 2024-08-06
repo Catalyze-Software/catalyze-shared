@@ -32,6 +32,46 @@ impl Join {
         }
     }
 
+    pub fn has_owner_role(&self) -> bool {
+        self.roles.contains(&OWNER_ROLE.into())
+    }
+
+    pub fn set_admin_role(&mut self) -> Self {
+        Self {
+            roles: vec![(ADMIN_ROLE.into())],
+            updated_at: time(),
+            created_at: time(),
+        }
+    }
+
+    pub fn has_admin_role(&self) -> bool {
+        self.roles.contains(&ADMIN_ROLE.into())
+    }
+
+    pub fn set_moderator_role(&mut self) -> Self {
+        Self {
+            roles: vec![(MODERATOR_ROLE.into())],
+            updated_at: time(),
+            created_at: time(),
+        }
+    }
+
+    pub fn has_moderator_role(&self) -> bool {
+        self.roles.contains(&MODERATOR_ROLE.into())
+    }
+
+    pub fn set_member_role(&mut self) -> Self {
+        Self {
+            roles: vec![(MEMBER_ROLE.into())],
+            updated_at: time(),
+            created_at: time(),
+        }
+    }
+
+    pub fn has_member_role(&self) -> bool {
+        self.roles.contains(&MEMBER_ROLE.into())
+    }
+
     pub fn set_role(&mut self, role: String) {
         if ![ADMIN_ROLE, MODERATOR_ROLE, MEMBER_ROLE].contains(&role.as_str()) {
             return;

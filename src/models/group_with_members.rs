@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 use candid::{CandidType, Deserialize, Principal};
 use ic_cdk::{api::time, caller};
 use serde::Serialize;
@@ -17,6 +15,10 @@ use crate::{
 use super::{
     api_error::ApiError,
     boosted::Boost,
+    group_structs::{
+        group_members::GroupMembers, group_metadata::GroupMetadata, group_privacy::GroupPrivacy,
+        group_references::GroupReferences,
+    },
     invite_type::InviteType,
     member::{Invite, Join},
     permission::Permission,
@@ -27,26 +29,13 @@ impl_storable_for!(GroupWithMembers);
 
 #[derive(Clone, CandidType, Serialize, Deserialize, Debug)]
 pub struct GroupWithMembers {
-    pub name: String,
-    pub description: String,
-    pub website: String,
-    pub location: Location,
-    pub privacy: Privacy,
+    pub metadata: GroupMetadata,
+    pub privacy: GroupPrivacy,
     pub owner: Principal,
     pub created_by: Principal,
-    pub matrix_space_id: String,
-    pub image: Asset,
-    pub banner_image: Asset,
-    pub tags: Vec<u32>,
-    pub privacy_gated_type_amount: Option<u64>,
-    pub roles: Vec<Role>,
+    pub members: GroupMembers,
+    pub references: GroupReferences,
     pub is_deleted: bool,
-    pub notification_id: Option<u64>,
-    pub special_members: HashMap<Principal, String>,
-    pub wallets: HashMap<Principal, String>,
-    pub members: HashMap<Principal, Join>,
-    pub invites: HashMap<Principal, Invite>,
-    pub events: Vec<u64>,
     pub updated_on: u64,
     pub created_on: u64,
 }
@@ -54,77 +43,69 @@ pub struct GroupWithMembers {
 impl Default for GroupWithMembers {
     fn default() -> Self {
         Self {
-            name: Default::default(),
-            description: Default::default(),
-            website: Default::default(),
-            location: Default::default(),
+            metadata: Default::default(),
             privacy: Default::default(),
             owner: Principal::anonymous(),
             created_by: Principal::anonymous(),
-            matrix_space_id: Default::default(),
-            image: Default::default(),
-            banner_image: Default::default(),
-            tags: Default::default(),
-            wallets: Default::default(),
-            roles: Vec::default(),
-            is_deleted: Default::default(),
-            notification_id: Default::default(),
-            privacy_gated_type_amount: Default::default(),
-            special_members: Default::default(),
             members: Default::default(),
-            invites: Default::default(),
-            events: Default::default(),
+            references: Default::default(),
+            is_deleted: Default::default(),
             updated_on: Default::default(),
             created_on: Default::default(),
         }
     }
 }
 
-impl GroupWithMembers {
-    pub fn from(group: PostGroup) -> Self {
+impl From<PostGroup> for GroupWithMembers {
+    fn from(group: PostGroup) -> Self {
         Self {
-            name: group.name,
-            description: group.description,
-            website: group.website,
-            location: group.location,
-            privacy: group.privacy,
+            metadata: GroupMetadata {
+                name: group.name,
+                description: group.description,
+                website: group.website,
+                location: group.location,
+                image: group.image,
+                banner_image: group.banner_image,
+            },
+            privacy: GroupPrivacy {
+                privacy: group.privacy,
+                privacy_gated_type_amount: group.privacy_gated_type_amount,
+            },
             owner: caller(),
             created_by: caller(),
-            matrix_space_id: group.matrix_space_id,
-            image: group.image,
-            banner_image: group.banner_image,
-            tags: group.tags,
-            wallets: Default::default(),
-            roles: Vec::default(),
+            members: GroupMembers::insert_with_owner(caller()),
+            references: GroupReferences {
+                matrix_space_id: group.matrix_space_id,
+                wallets: Default::default(),
+                notification_id: Default::default(),
+                events: Default::default(),
+                tags: group.tags,
+            },
             is_deleted: false,
-            notification_id: None,
             updated_on: time(),
             created_on: time(),
-            privacy_gated_type_amount: group.privacy_gated_type_amount,
-            special_members: HashMap::default(),
-            members: Default::default(),
-            invites: Default::default(),
-            events: Default::default(),
         }
     }
+}
 
-    pub fn update(&mut self, group: UpdateGroup) {
-        self.name = group.name;
-        self.description = group.description;
-        self.website = group.website;
-        self.location = group.location;
-        self.privacy = group.privacy;
-        self.image = group.image;
-        self.banner_image = group.banner_image;
-        self.tags = group.tags;
-        self.privacy_gated_type_amount = group.privacy_gated_type_amount;
+impl GroupWithMembers {
+    pub fn update(&mut self, group: UpdateGroup) -> Self {
+        self.metadata.name = group.name;
+        self.metadata.description = group.description;
+        self.metadata.website = group.website;
+        self.metadata.location = group.location;
+        self.metadata.image = group.image;
+        self.metadata.banner_image = group.banner_image;
+        self.privacy.privacy = group.privacy;
+        self.privacy.privacy_gated_type_amount = group.privacy_gated_type_amount;
+        self.references.tags = group.tags;
         self.updated_on = time();
+        self.clone()
     }
 
     pub fn set_owner(&mut self, owner: Principal) -> Self {
         self.owner = owner;
-        self.members = HashMap::from_iter([(caller(), Join::default().set_owner_role())]);
-        self.updated_on = time();
+        self.members.set_owner(owner);
         self.clone()
     }
 
@@ -135,25 +116,25 @@ impl GroupWithMembers {
     }
 
     pub fn get_members(&self) -> Vec<Principal> {
-        self.members.keys().cloned().collect()
+        self.members.members.keys().cloned().collect()
     }
 
     pub fn remove_member(&mut self, member: Principal) {
-        self.members.remove(&member);
+        self.members.members.remove(&member);
     }
 
     pub fn add_member(&mut self, member: Principal) {
-        self.members.insert(member, Join::default());
+        self.members.members.insert(member, Join::default());
     }
 
     pub fn set_member_role(&mut self, member: Principal, role: String) {
-        if let Some(member) = self.members.get_mut(&member) {
+        if let Some(member) = self.members.members.get_mut(&member) {
             member.set_role(role);
         }
     }
 
     pub fn get_invites(&self) -> Vec<Principal> {
-        self.invites.keys().cloned().collect()
+        self.members.invites.keys().cloned().collect()
     }
 
     pub fn add_invite(
@@ -162,7 +143,7 @@ impl GroupWithMembers {
         invite_type: InviteType,
         notification_id: Option<u64>,
     ) {
-        self.invites.insert(
+        self.members.invites.insert(
             member,
             Invite {
                 notification_id,
@@ -174,25 +155,25 @@ impl GroupWithMembers {
     }
 
     pub fn remove_invite(&mut self, member: Principal) {
-        self.invites.remove(&member);
+        self.members.invites.remove(&member);
     }
 
     pub fn convert_invite_to_member(&mut self, principal: Principal) {
-        if self.invites.remove(&principal).is_some() {
-            self.members.insert(principal, Join::default());
+        if self.members.invites.remove(&principal).is_some() {
+            self.members.members.insert(principal, Join::default());
         }
     }
 
     pub fn get_event_ids(&self) -> Vec<u64> {
-        self.events.clone()
+        self.references.events.clone()
     }
 
     pub fn add_event(&mut self, event_id: u64) {
-        self.events.push(event_id);
+        self.references.events.push(event_id);
     }
 
     pub fn remove_event(&mut self, event_id: u64) {
-        self.events.retain(|&id| id != event_id);
+        self.references.events.retain(|&id| id != event_id);
     }
 
     pub fn get_roles(&self) -> Vec<Role> {
@@ -200,7 +181,7 @@ impl GroupWithMembers {
         let mut roles = default_roles();
 
         // append the custom roles stored on the group
-        roles.append(&mut self.roles.clone());
+        roles.append(&mut self.members.roles.clone());
         roles
     }
 
@@ -214,23 +195,26 @@ impl GroupWithMembers {
     }
 
     pub fn set_notification_id(&mut self, notification_id: u64) {
-        self.notification_id = Some(notification_id);
+        self.references.notification_id = Some(notification_id);
     }
 
     pub fn remove_notification_id(&mut self) {
-        self.notification_id = None;
+        self.references.notification_id = None;
     }
 
     pub fn add_special_member(&mut self, member: Principal, relation: RelationType) {
-        self.special_members.insert(member, relation.to_string());
+        self.members
+            .special_members
+            .insert(member, relation.to_string());
     }
 
     pub fn remove_special_member_from_group(&mut self, member: Principal) {
-        self.special_members.remove(&member);
+        self.members.special_members.remove(&member);
     }
 
     pub fn is_banned_member(&self, member: Principal) -> bool {
-        self.special_members
+        self.members
+            .special_members
             .get(&member)
             .map(|relation| relation == &RelationType::Blocked.to_string())
             .unwrap_or(false)
@@ -294,29 +278,34 @@ pub struct GroupResponse {
 impl GroupResponse {
     pub fn new(id: u64, group: GroupWithMembers, boosted: Option<Boost>) -> Self {
         let mut roles = default_roles();
-        roles.append(&mut group.roles.clone());
+        roles.append(&mut group.members.roles.clone());
         Self {
             id,
-            name: group.name,
-            description: group.description,
-            website: group.website,
-            location: group.location,
-            privacy: group.privacy,
+            name: group.metadata.name,
+            description: group.metadata.description,
+            website: group.metadata.website,
+            location: group.metadata.location,
+            privacy: group.privacy.privacy,
             created_by: group.created_by,
             owner: group.owner,
-            matrix_space_id: group.matrix_space_id,
-            image: group.image,
-            banner_image: group.banner_image,
-            tags: group.tags,
+            matrix_space_id: group.references.matrix_space_id,
+            image: group.metadata.image,
+            banner_image: group.metadata.banner_image,
+            tags: group.references.tags,
             roles,
-            wallets: group.wallets.into_iter().collect(),
+            wallets: group
+                .references
+                .wallets
+                .iter()
+                .map(|(k, v)| (*k, v.clone()))
+                .collect(),
             is_deleted: group.is_deleted,
-            privacy_gated_type_amount: group.privacy_gated_type_amount,
-            boosted,
+            privacy_gated_type_amount: group.privacy.privacy_gated_type_amount,
             updated_on: group.updated_on,
             created_on: group.created_on,
-            events_count: group.events.len() as u64,
-            members_count: group.members.len() as u64,
+            boosted,
+            events_count: group.references.events.len() as u64,
+            members_count: group.members.members.len() as u64,
         }
     }
 
@@ -351,22 +340,26 @@ impl Sorter<u64, GroupWithMembers> for GroupSort {
         use GroupSort::*;
         use SortDirection::*;
         match self {
-            Name(Asc) => {
-                groups.sort_by(|(_, a), (_, b)| a.name.to_lowercase().cmp(&b.name.to_lowercase()))
-            }
-            Name(Desc) => {
-                groups.sort_by(|(_, a), (_, b)| b.name.to_lowercase().cmp(&a.name.to_lowercase()))
-            }
+            Name(Asc) => groups.sort_by(|(_, a), (_, b)| {
+                a.metadata
+                    .name
+                    .to_lowercase()
+                    .cmp(&b.metadata.name.to_lowercase())
+            }),
+            Name(Desc) => groups.sort_by(|(_, a), (_, b)| {
+                b.metadata
+                    .name
+                    .to_lowercase()
+                    .cmp(&a.metadata.name.to_lowercase())
+            }),
             CreatedOn(Asc) => groups.sort_by(|(_, a), (_, b)| a.created_on.cmp(&b.created_on)),
             CreatedOn(Desc) => groups.sort_by(|(_, a), (_, b)| b.created_on.cmp(&a.created_on)),
             UpdatedOn(Asc) => groups.sort_by(|(_, a), (_, b)| a.updated_on.cmp(&b.updated_on)),
             UpdatedOn(Desc) => groups.sort_by(|(_, a), (_, b)| b.updated_on.cmp(&a.updated_on)),
-            MemberCount(Asc) => {
-                groups.sort_by(|(_, a), (_, b)| a.members.len().cmp(&b.members.len()))
-            }
-            MemberCount(Desc) => {
-                groups.sort_by(|(_, a), (_, b)| b.members.len().cmp(&a.members.len()))
-            }
+            MemberCount(Asc) => groups
+                .sort_by(|(_, a), (_, b)| a.members.members.len().cmp(&b.members.members.len())),
+            MemberCount(Desc) => groups
+                .sort_by(|(_, a), (_, b)| b.members.members.len().cmp(&a.members.members.len())),
         }
         groups
     }
@@ -398,10 +391,14 @@ impl Filter<u64, GroupWithMembers> for GroupFilter {
         use GroupFilter::*;
         match self {
             None => true,
-            Name(name) => group.name.to_lowercase().contains(&name.to_lowercase()),
+            Name(name) => group
+                .metadata
+                .name
+                .to_lowercase()
+                .contains(&name.to_lowercase()),
             Owner(owner) => group.owner == *owner,
             Ids(ids) => ids.contains(id),
-            Tag(tag) => group.tags.contains(tag),
+            Tag(tag) => group.references.tags.contains(tag),
             UpdatedOn(range) => {
                 if range.end_date() > 0 {
                     range.is_within(group.updated_on)

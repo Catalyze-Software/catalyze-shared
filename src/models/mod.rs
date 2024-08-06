@@ -29,6 +29,7 @@ pub mod attendee;
 pub mod event;
 pub mod friend_request;
 pub mod group;
+pub mod group_structs;
 pub mod invite_type;
 pub mod member;
 pub mod profile;
