@@ -1,6 +1,8 @@
 use candid::{CandidType, Deserialize};
 use serde::Serialize;
 
+use crate::CanisterResult;
+
 #[derive(CandidType, Debug, Serialize, Deserialize)]
 pub struct PagedResponse<T> {
     pub page: usize,
@@ -47,5 +49,9 @@ impl<T: Clone> PagedResponse<T> {
             number_of_pages,
             data: data[start_limit..end_limit].to_vec(),
         }
+    }
+
+    pub fn into_result(self) -> CanisterResult<Self> {
+        Ok(self)
     }
 }
