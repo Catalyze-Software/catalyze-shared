@@ -48,14 +48,6 @@ where
         async move { ic_call(self.canister()?, "filter", (filters,)).await }
     }
 
-    fn insert(
-        &self,
-        key: K,
-        value: V,
-    ) -> impl std::future::Future<Output = CanisterResult<(K, V)>> + Sync + Send {
-        async move { ic_call(self.canister()?, "insert", (key, value)).await }
-    }
-
     fn update(
         &self,
         key: K,
@@ -83,5 +75,33 @@ where
         keys: Vec<K>,
     ) -> impl std::future::Future<Output = CanisterResult<()>> + Sync + Send {
         async move { ic_call(self.canister()?, "remove_many", (keys,)).await }
+    }
+}
+
+pub trait StorageClientInsertable<V, F>: StorageClient<u64, V, F>
+where
+    V: candid::CandidType + for<'a> candid::Deserialize<'a> + Sync + Send,
+    F: candid::CandidType + Clone + Sync + Send,
+{
+    fn insert(
+        &self,
+        value: V,
+    ) -> impl std::future::Future<Output = CanisterResult<(u64, V)>> + Sync + Send {
+        async move { ic_call(self.canister()?, "insert", (value,)).await }
+    }
+}
+
+pub trait StorageClientInsertableByKey<K, V, F>: StorageClient<K, V, F>
+where
+    K: candid::CandidType + for<'a> candid::Deserialize<'a> + Sync + Send,
+    V: candid::CandidType + for<'a> candid::Deserialize<'a> + Sync + Send,
+    F: candid::CandidType + Clone + Sync + Send,
+{
+    fn insert(
+        &self,
+        key: K,
+        value: V,
+    ) -> impl std::future::Future<Output = CanisterResult<(K, V)>> + Sync + Send {
+        async move { ic_call(self.canister()?, "insert", (key, value)).await }
     }
 }

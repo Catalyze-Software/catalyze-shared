@@ -16,3 +16,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Bump `ic-cdk` crate to version `0.15`
+- Extract `insert` method from the `StorageClient` trait to the two new traits
+  `StorageClientInsertable` and `StorageClientInsertableByKey` to allow working with the incrementing
+  keys
