@@ -1,7 +1,7 @@
 use candid::{CandidType, Principal};
 use serde::{Deserialize, Serialize};
 
-use super::{attendee::Attendee, event::Event, group::Group, member::Member, profile::Profile};
+use super::{attendee::Attendee, event::Event, group::Group, old_member::Member, profile::Profile};
 
 #[derive(
     CandidType, Deserialize, Serialize, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Default,

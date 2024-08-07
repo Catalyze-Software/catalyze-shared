@@ -23,8 +23,15 @@ pub struct PostWallet {
 }
 
 #[derive(Clone, Debug, Serialize, CandidType, Deserialize)]
-pub struct WalletResponse {
+pub struct OldWalletResponse {
     pub provider: String,
     pub principal: Principal,
+    pub is_primary: bool,
+}
+
+#[derive(Clone, Debug, Serialize, CandidType, Deserialize)]
+pub struct WalletResponse {
+    pub provider: String,
+    pub address: String,
     pub is_primary: bool,
 }
