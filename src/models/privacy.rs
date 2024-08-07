@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 #[derive(
     CandidType, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Debug, Default,
 )]
-pub enum Privacy {
+pub enum PrivacyType {
     #[default]
     Public,
     Private,
@@ -46,9 +46,9 @@ pub struct TokenGated {
     pub amount: u64,
 }
 
-impl fmt::Display for Privacy {
+impl fmt::Display for PrivacyType {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        use Privacy::*;
+        use PrivacyType::*;
         match self {
             Public => write!(f, "None"),
             Private => write!(f, "Private"),

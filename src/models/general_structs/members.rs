@@ -9,14 +9,14 @@ use crate::{
 };
 
 #[derive(Clone, CandidType, Serialize, Deserialize, Debug, Default)]
-pub struct GroupMembers {
+pub struct Members {
     pub members: HashMap<Principal, Join>,
     pub invites: HashMap<Principal, Invite>,
     pub special_members: HashMap<Principal, String>,
     pub roles: Vec<Role>,
 }
 
-impl GroupMembers {
+impl Members {
     pub fn set_owner(&mut self, new_owner: Principal) {
         if let Some((_, join)) = self
             .members
@@ -30,7 +30,7 @@ impl GroupMembers {
         }
     }
 
-    pub fn insert_with_owner(owner: Principal) -> Self {
+    pub fn new_with_owner(owner: Principal) -> Self {
         let mut members = HashMap::new();
         members.insert(owner, Join::default().set_owner_role());
         Self {

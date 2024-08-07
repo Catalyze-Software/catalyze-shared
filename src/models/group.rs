@@ -7,7 +7,7 @@ use serde::Serialize;
 use crate::{
     impl_storable_for,
     misc::role_misc::default_roles,
-    models::{asset::Asset, location::Location, privacy::Privacy, role::Role},
+    models::{asset::Asset, location::Location, privacy::PrivacyType, role::Role},
 };
 
 use super::{
@@ -25,7 +25,7 @@ pub struct Group {
     pub description: String,
     pub website: String,
     pub location: Location,
-    pub privacy: Privacy,
+    pub privacy: PrivacyType,
     pub owner: Principal,
     pub created_by: Principal,
     pub matrix_space_id: String,

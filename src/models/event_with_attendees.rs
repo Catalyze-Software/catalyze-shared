@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 use candid::{CandidType, Deserialize, Principal};
 use ic_cdk::{api::time, caller};
 use serde::Serialize;
@@ -7,7 +5,7 @@ use serde::Serialize;
 use crate::{
     impl_storable_for,
     models::{
-        asset::Asset, date_range::DateRange, location::Location, privacy::Privacy,
+        asset::Asset, date_range::DateRange, location::Location, privacy::PrivacyType,
         sort_direction::SortDirection,
     },
     Filter, Sorter,
@@ -16,143 +14,97 @@ use crate::{
 use super::{
     api_error::ApiError,
     boosted::Boost,
+    general_structs::{
+        members::Members, metadata::Metadata, privacy::Privacy, references::References,
+    },
     invite_type::InviteType,
     member::{Invite, Join},
+    relation_type::RelationType,
 };
 
 impl_storable_for!(EventWithAttendees);
 
 #[derive(Clone, CandidType, Serialize, Deserialize, Debug)]
 pub struct EventWithAttendees {
-    pub name: String,
-    pub description: String,
-    pub date: DateRange,
+    pub metadata: Metadata,
+    pub dates: Vec<DateRange>,
     pub privacy: Privacy,
     pub group_id: Option<u64>,
     pub created_by: Principal,
     pub owner: Principal,
-    pub website: String,
-    pub location: Location,
-    pub image: Asset,
-    pub banner_image: Asset,
-    pub tags: Vec<u32>,
-    pub is_canceled: (bool, String),
+    pub references: References,
+    pub is_canceled: Option<String>,
     pub is_deleted: bool,
-    pub metadata: Option<String>,
-    pub attendees: HashMap<Principal, Join>,
-    pub invites: HashMap<Principal, Invite>,
+    pub attendees: Members,
     pub updated_on: u64,
     pub created_on: u64,
-}
-
-impl EventWithAttendees {
-    pub fn match_privacy(&self, privacy: Privacy) -> bool {
-        self.privacy == privacy
-    }
 }
 
 impl From<PostEvent> for EventWithAttendees {
     fn from(post_event: PostEvent) -> Self {
         Self {
-            name: post_event.name,
-            description: post_event.description,
-            date: post_event.date,
-            privacy: post_event.privacy,
+            metadata: Metadata {
+                name: post_event.name.clone(),
+                description: post_event.description.clone(),
+                image: post_event.image.clone(),
+                banner_image: post_event.banner_image.clone(),
+                website: post_event.website.clone(),
+                location: post_event.location.clone(),
+            },
+            dates: vec![post_event.date],
+            privacy: Privacy {
+                privacy_type: post_event.privacy,
+                privacy_gated_type_amount: None,
+            },
             group_id: post_event.group_id,
             created_by: caller(),
             owner: caller(),
-            website: post_event.website,
-            location: post_event.location,
-            image: post_event.image,
-            banner_image: post_event.banner_image,
-            tags: post_event.tags,
-            is_canceled: (false, "".to_string()),
+            references: References::default(),
+            is_canceled: None,
             is_deleted: false,
-            metadata: post_event.metadata,
+            attendees: Members::new_with_owner(caller()),
             updated_on: time(),
             created_on: time(),
-            attendees: Default::default(),
-            invites: Default::default(),
         }
     }
 }
 
 impl EventWithAttendees {
-    pub fn update(&mut self, update_event: UpdateEvent) -> Self {
-        self.name = update_event.name;
-        self.description = update_event.description;
-        self.date = update_event.date;
-        self.privacy = update_event.privacy;
-        self.website = update_event.website;
-        self.location = update_event.location;
-        self.image = update_event.image;
-        self.banner_image = update_event.banner_image;
-        self.tags = update_event.tags;
-        self.metadata = update_event.metadata;
+    pub fn update(&mut self, event: UpdateEvent) -> Self {
+        self.metadata.name = event.name;
+        self.metadata.description = event.description;
+        self.metadata.website = event.website;
+        self.metadata.location = event.location;
+        self.metadata.image = event.image;
+        self.metadata.banner_image = event.banner_image;
+        self.privacy.privacy_type = event.privacy;
+        self.references.tags = event.tags;
         self.updated_on = time();
         self.clone()
+    }
+
+    pub fn get_total_date_range(&self) -> DateRange {
+        let mut start_dates = self.dates.clone();
+        start_dates.sort_by_key(|range| range.start_date());
+
+        let mut end_dates = self.dates.clone();
+        end_dates.sort_by_key(|range| range.end_date());
+
+        let start_date = start_dates
+            .first()
+            .map(|date| date.start_date())
+            .unwrap_or(time());
+
+        let end_date = end_dates
+            .last()
+            .map(|date| date.end_date())
+            .unwrap_or(time());
+        DateRange::new(start_date, end_date)
     }
 
     pub fn set_owner(&mut self, owner: Principal) -> Self {
         self.owner = owner;
-        self.attendees
-            .insert(owner, Join::default().set_owner_role());
-        self.updated_on = time();
-        self.clone()
-    }
-
-    pub fn get_attendee(&self) -> Vec<Principal> {
-        self.attendees.keys().cloned().collect()
-    }
-
-    pub fn remove_attendee(&mut self, attendee: Principal) {
-        self.attendees.remove(&attendee);
-    }
-
-    pub fn add_attendee(&mut self, attendee: Principal) {
-        self.attendees.insert(attendee, Join::default());
-    }
-
-    pub fn set_attendee_role(&mut self, attendee: Principal, role: String) {
-        if let Some(attendee) = self.attendees.get_mut(&attendee) {
-            attendee.set_role(role);
-        }
-    }
-
-    pub fn get_invites(&self) -> Vec<Principal> {
-        self.invites.keys().cloned().collect()
-    }
-
-    pub fn add_invite(
-        &mut self,
-        attendee: Principal,
-        invite_type: InviteType,
-        notification_id: Option<u64>,
-    ) {
-        self.invites.insert(
-            attendee,
-            Invite {
-                notification_id,
-                invite_type,
-                updated_at: time(),
-                created_at: time(),
-            },
-        );
-    }
-
-    pub fn remove_invite(&mut self, attendee: Principal) {
-        self.invites.remove(&attendee);
-    }
-
-    pub fn convert_invite_to_attendee(&mut self, principal: Principal) {
-        if self.invites.remove(&principal).is_some() {
-            self.attendees.insert(principal, Join::default());
-        }
-    }
-
-    pub fn cancel(&mut self, reason: String) -> Self {
-        self.is_canceled = (true, reason);
-        self.updated_on = time();
+        self.attendees.set_owner(owner);
         self.clone()
     }
 
@@ -162,33 +114,97 @@ impl EventWithAttendees {
         self.clone()
     }
 
-    pub fn is_from_group(&self, group_id: Option<u64>) -> bool {
-        self.group_id == group_id
+    pub fn get_members(&self) -> Vec<Principal> {
+        self.attendees.members.keys().cloned().collect()
+    }
+
+    pub fn remove_attendee(&mut self, member: Principal) {
+        self.attendees.members.remove(&member);
+    }
+
+    pub fn add_attendee(&mut self, member: Principal) {
+        self.attendees.members.insert(member, Join::default());
+    }
+
+    pub fn set_attendee_role(&mut self, member: Principal, role: String) {
+        if let Some(member) = self.attendees.members.get_mut(&member) {
+            member.set_role(role);
+        }
+    }
+
+    pub fn get_invites(&self) -> Vec<Principal> {
+        self.attendees.invites.keys().cloned().collect()
+    }
+
+    pub fn add_invite(
+        &mut self,
+        member: Principal,
+        invite_type: InviteType,
+        notification_id: Option<u64>,
+    ) {
+        self.attendees.invites.insert(
+            member,
+            Invite {
+                notification_id,
+                invite_type,
+                updated_at: time(),
+                created_at: time(),
+            },
+        );
+    }
+
+    pub fn remove_invite(&mut self, member: Principal) {
+        self.attendees.invites.remove(&member);
+    }
+
+    pub fn convert_invite_to_attendee(&mut self, principal: Principal) {
+        if self.attendees.invites.remove(&principal).is_some() {
+            self.attendees.members.insert(principal, Join::default());
+        }
+    }
+
+    pub fn set_notification_id(&mut self, notification_id: u64) {
+        self.references.notification_id = Some(notification_id);
+    }
+
+    pub fn remove_notification_id(&mut self) {
+        self.references.notification_id = None;
+    }
+
+    pub fn add_special_attendees(&mut self, member: Principal, relation: RelationType) {
+        self.attendees
+            .special_members
+            .insert(member, relation.to_string());
+    }
+
+    pub fn remove_special_attendee(&mut self, member: Principal) {
+        self.attendees.special_members.remove(&member);
+    }
+
+    pub fn is_banned_member(&self, member: Principal) -> bool {
+        self.attendees
+            .special_members
+            .get(&member)
+            .map(|relation| relation == &RelationType::Blocked.to_string())
+            .unwrap_or(false)
     }
 }
 
 impl Default for EventWithAttendees {
     fn default() -> Self {
         Self {
-            name: Default::default(),
-            description: Default::default(),
-            date: Default::default(),
-            privacy: Default::default(),
-            group_id: Default::default(),
+            metadata: Metadata::default(),
+            dates: vec![DateRange::default()],
+            privacy: Privacy::default(),
+            group_id: None,
             created_by: Principal::anonymous(),
             owner: Principal::anonymous(),
-            website: Default::default(),
-            location: Default::default(),
-            image: Default::default(),
-            banner_image: Default::default(),
-            tags: Default::default(),
-            is_canceled: Default::default(),
-            is_deleted: Default::default(),
-            attendees: Default::default(),
-            invites: Default::default(),
-            metadata: Default::default(),
-            updated_on: Default::default(),
-            created_on: Default::default(),
+            references: References::default(),
+            is_canceled: None,
+            is_deleted: false,
+            attendees: Members::default(),
+            updated_on: time(),
+            created_on: time(),
         }
     }
 }
@@ -200,7 +216,7 @@ pub struct PostEvent {
     name: String,
     description: String,
     date: DateRange,
-    privacy: Privacy,
+    privacy: PrivacyType,
     website: String,
     location: Location,
     image: Asset,
@@ -215,7 +231,7 @@ pub struct UpdateEvent {
     pub name: String,
     pub description: String,
     pub date: DateRange,
-    pub privacy: Privacy,
+    pub privacy: PrivacyType,
     pub website: String,
     pub location: Location,
     pub image: Asset,
@@ -249,14 +265,26 @@ impl Sorter<u64, EventWithAttendees> for EventSort {
             CreatedOn(Desc) => events.sort_by(|a, b| b.1.created_on.cmp(&a.1.created_on)),
             UpdatedOn(Asc) => events.sort_by(|a, b| a.1.updated_on.cmp(&b.1.updated_on)),
             UpdatedOn(Desc) => events.sort_by(|a, b| b.1.updated_on.cmp(&a.1.updated_on)),
-            StartDate(Asc) => {
-                events.sort_by(|a, b| a.1.date.start_date().cmp(&b.1.date.start_date()))
-            }
-            StartDate(Desc) => {
-                events.sort_by(|a, b| b.1.date.start_date().cmp(&a.1.date.start_date()))
-            }
-            EndDate(Asc) => events.sort_by(|a, b| a.1.date.end_date().cmp(&b.1.date.end_date())),
-            EndDate(Desc) => events.sort_by(|a, b| b.1.date.end_date().cmp(&a.1.date.end_date())),
+            StartDate(Asc) => events.sort_by(|a, b| {
+                a.1.get_total_date_range()
+                    .start_date()
+                    .cmp(&b.1.get_total_date_range().start_date())
+            }),
+            StartDate(Desc) => events.sort_by(|a, b| {
+                b.1.get_total_date_range()
+                    .start_date()
+                    .cmp(&a.1.get_total_date_range().start_date())
+            }),
+            EndDate(Asc) => events.sort_by(|a, b| {
+                a.1.get_total_date_range()
+                    .end_date()
+                    .cmp(&b.1.get_total_date_range().end_date())
+            }),
+            EndDate(Desc) => events.sort_by(|a, b| {
+                b.1.get_total_date_range()
+                    .end_date()
+                    .cmp(&a.1.get_total_date_range().end_date())
+            }),
         }
         events
     }
@@ -283,20 +311,24 @@ impl Filter<u64, EventWithAttendees> for EventFilter {
         use EventFilter::*;
         match self {
             None => true,
-            Name(name) => event.name.to_lowercase().contains(&name.to_lowercase()),
+            Name(name) => event
+                .metadata
+                .name
+                .to_lowercase()
+                .contains(&name.to_lowercase()),
             StartDate(date) => {
                 if date.is_within(time()) {
                     return true;
                 }
 
-                date.is_within(event.date.start_date())
+                date.is_within(event.get_total_date_range().start_date())
             }
-            EndDate(date) => date.is_within(event.date.end_date()),
+            EndDate(date) => date.is_within(event.get_total_date_range().end_date()),
             Owner(owner) => *owner == event.owner,
             Groups(groups) => groups.contains(&event.group_id),
             Ids(ids) => ids.contains(id),
-            Tag(tag) => event.tags.contains(tag),
-            IsCanceled(is_canceled) => event.is_canceled.0 == *is_canceled,
+            Tag(tag) => event.references.tags.contains(tag),
+            IsCanceled(is_canceled) => event.is_canceled.is_some() == *is_canceled,
             UpdatedOn(date) => date.is_within(event.updated_on),
             CreatedOn(date) => date.is_within(event.created_on),
         }
@@ -320,7 +352,7 @@ pub struct EventResponse {
     pub name: String,
     pub description: String,
     pub date: DateRange,
-    pub privacy: Privacy,
+    pub privacy: PrivacyType,
     pub created_by: Principal,
     pub owner: Principal,
     pub website: String,
@@ -343,26 +375,29 @@ impl EventResponse {
     pub fn new(id: u64, event: EventWithAttendees, boosted: Option<Boost>) -> Self {
         Self {
             id,
-            name: event.name,
-            description: event.description,
-            date: event.date,
-            privacy: event.privacy,
+            name: event.metadata.name.clone(),
+            description: event.metadata.description.clone(),
+            date: event.get_total_date_range().clone(),
+            privacy: event.privacy.privacy_type,
             created_by: event.created_by,
             owner: event.owner,
-            website: event.website,
-            location: event.location,
-            image: event.image,
-            banner_image: event.banner_image,
-            is_canceled: event.is_canceled,
+            website: event.metadata.website,
+            location: event.metadata.location,
+            image: event.metadata.image,
+            banner_image: event.metadata.banner_image,
+            is_canceled: (
+                event.is_canceled.is_some(),
+                event.is_canceled.unwrap_or_default(),
+            ),
             is_deleted: event.is_deleted,
-            tags: event.tags,
-            metadata: event.metadata,
+            tags: event.references.tags,
+            metadata: None,
             updated_on: event.updated_on,
             created_on: event.created_on,
             group_id: event.group_id,
+            attendee_count: event.attendees.members.len() as u64,
+            invite_count: event.attendees.invites.len() as u64,
             boosted,
-            attendee_count: event.attendees.len() as u64,
-            invite_count: event.invites.len() as u64,
         }
     }
 

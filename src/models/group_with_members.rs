@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use candid::{CandidType, Deserialize, Principal};
 use ic_cdk::{api::time, caller};
 use serde::Serialize;
@@ -6,7 +8,7 @@ use crate::{
     impl_storable_for,
     misc::role_misc::default_roles,
     models::{
-        asset::Asset, date_range::DateRange, location::Location, privacy::Privacy, role::Role,
+        asset::Asset, date_range::DateRange, location::Location, privacy::PrivacyType, role::Role,
         sort_direction::SortDirection,
     },
     Filter, Sorter,
@@ -15,9 +17,8 @@ use crate::{
 use super::{
     api_error::ApiError,
     boosted::Boost,
-    group_structs::{
-        group_members::GroupMembers, group_metadata::GroupMetadata, group_privacy::GroupPrivacy,
-        group_references::GroupReferences,
+    general_structs::{
+        members::Members, metadata::Metadata, privacy::Privacy, references::References,
     },
     invite_type::InviteType,
     member::{Invite, Join},
@@ -29,12 +30,15 @@ impl_storable_for!(GroupWithMembers);
 
 #[derive(Clone, CandidType, Serialize, Deserialize, Debug)]
 pub struct GroupWithMembers {
-    pub metadata: GroupMetadata,
-    pub privacy: GroupPrivacy,
+    pub metadata: Metadata,
+    pub privacy: Privacy,
     pub owner: Principal,
     pub created_by: Principal,
-    pub members: GroupMembers,
-    pub references: GroupReferences,
+    pub members: Members,
+    pub references: References,
+    pub matrix_space_id: String,
+    pub wallets: HashMap<Principal, String>,
+    pub events: Vec<u64>,
     pub is_deleted: bool,
     pub updated_on: u64,
     pub created_on: u64,
@@ -52,6 +56,9 @@ impl Default for GroupWithMembers {
             is_deleted: Default::default(),
             updated_on: Default::default(),
             created_on: Default::default(),
+            matrix_space_id: Default::default(),
+            events: Default::default(),
+            wallets: Default::default(),
         }
     }
 }
@@ -59,7 +66,7 @@ impl Default for GroupWithMembers {
 impl From<PostGroup> for GroupWithMembers {
     fn from(group: PostGroup) -> Self {
         Self {
-            metadata: GroupMetadata {
+            metadata: Metadata {
                 name: group.name,
                 description: group.description,
                 website: group.website,
@@ -67,23 +74,23 @@ impl From<PostGroup> for GroupWithMembers {
                 image: group.image,
                 banner_image: group.banner_image,
             },
-            privacy: GroupPrivacy {
-                privacy: group.privacy,
+            privacy: Privacy {
+                privacy_type: group.privacy,
                 privacy_gated_type_amount: group.privacy_gated_type_amount,
             },
             owner: caller(),
             created_by: caller(),
-            members: GroupMembers::insert_with_owner(caller()),
-            references: GroupReferences {
-                matrix_space_id: group.matrix_space_id,
-                wallets: Default::default(),
+            members: Members::new_with_owner(caller()),
+            references: References {
                 notification_id: Default::default(),
-                events: Default::default(),
                 tags: group.tags,
             },
             is_deleted: false,
             updated_on: time(),
             created_on: time(),
+            matrix_space_id: group.matrix_space_id,
+            events: Default::default(),
+            wallets: Default::default(),
         }
     }
 }
@@ -96,7 +103,7 @@ impl GroupWithMembers {
         self.metadata.location = group.location;
         self.metadata.image = group.image;
         self.metadata.banner_image = group.banner_image;
-        self.privacy.privacy = group.privacy;
+        self.privacy.privacy_type = group.privacy;
         self.privacy.privacy_gated_type_amount = group.privacy_gated_type_amount;
         self.references.tags = group.tags;
         self.updated_on = time();
@@ -165,15 +172,15 @@ impl GroupWithMembers {
     }
 
     pub fn get_event_ids(&self) -> Vec<u64> {
-        self.references.events.clone()
+        self.events.clone()
     }
 
     pub fn add_event(&mut self, event_id: u64) {
-        self.references.events.push(event_id);
+        self.events.push(event_id);
     }
 
     pub fn remove_event(&mut self, event_id: u64) {
-        self.references.events.retain(|&id| id != event_id);
+        self.events.retain(|&id| id != event_id);
     }
 
     pub fn get_roles(&self) -> Vec<Role> {
@@ -208,7 +215,7 @@ impl GroupWithMembers {
             .insert(member, relation.to_string());
     }
 
-    pub fn remove_special_member_from_group(&mut self, member: Principal) {
+    pub fn remove_special_member(&mut self, member: Principal) {
         self.members.special_members.remove(&member);
     }
 
@@ -230,7 +237,7 @@ pub struct PostGroup {
     pub website: String,
     pub matrix_space_id: String,
     pub location: Location,
-    pub privacy: Privacy,
+    pub privacy: PrivacyType,
     pub privacy_gated_type_amount: Option<u64>,
     pub image: Asset,
     pub banner_image: Asset,
@@ -243,7 +250,7 @@ pub struct UpdateGroup {
     pub description: String,
     pub website: String,
     pub location: Location,
-    pub privacy: Privacy,
+    pub privacy: PrivacyType,
     pub image: Asset,
     pub privacy_gated_type_amount: Option<u64>,
     pub banner_image: Asset,
@@ -257,7 +264,7 @@ pub struct GroupResponse {
     pub description: String,
     pub website: String,
     pub location: Location,
-    pub privacy: Privacy,
+    pub privacy: PrivacyType,
     pub created_by: Principal,
     pub owner: Principal,
     pub matrix_space_id: String,
@@ -285,26 +292,21 @@ impl GroupResponse {
             description: group.metadata.description,
             website: group.metadata.website,
             location: group.metadata.location,
-            privacy: group.privacy.privacy,
+            privacy: group.privacy.privacy_type,
             created_by: group.created_by,
             owner: group.owner,
-            matrix_space_id: group.references.matrix_space_id,
+            matrix_space_id: group.matrix_space_id,
             image: group.metadata.image,
             banner_image: group.metadata.banner_image,
             tags: group.references.tags,
             roles,
-            wallets: group
-                .references
-                .wallets
-                .iter()
-                .map(|(k, v)| (*k, v.clone()))
-                .collect(),
+            wallets: group.wallets.into_iter().collect(),
             is_deleted: group.is_deleted,
             privacy_gated_type_amount: group.privacy.privacy_gated_type_amount,
             updated_on: group.updated_on,
             created_on: group.created_on,
             boosted,
-            events_count: group.references.events.len() as u64,
+            events_count: group.events.len() as u64,
             members_count: group.members.members.len() as u64,
         }
     }

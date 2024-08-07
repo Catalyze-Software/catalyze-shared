@@ -22,3 +22,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Bump `ic-cdk` crate to version `0.15`
 - Let group and event use the same struct for joined and invites
+- Split `ProfileWithRefs` into seperate structs
+- - Split `GroupWithMembers` into seperate structs
+- - Split `EventWithAttendees` into seperate structs

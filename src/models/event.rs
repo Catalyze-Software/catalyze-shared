@@ -5,7 +5,7 @@ use serde::Serialize;
 use crate::{
     impl_storable_for,
     models::{
-        asset::Asset, date_range::DateRange, location::Location, privacy::Privacy,
+        asset::Asset, date_range::DateRange, location::Location, privacy::PrivacyType,
         sort_direction::SortDirection,
     },
     Filter, Sorter,
@@ -24,7 +24,7 @@ pub struct Event {
     pub name: String,
     pub description: String,
     pub date: DateRange,
-    pub privacy: Privacy,
+    pub privacy: PrivacyType,
     pub group_id: u64,
     pub created_by: Principal,
     pub owner: Principal,
@@ -41,7 +41,7 @@ pub struct Event {
 }
 
 impl Event {
-    pub fn match_privacy(&self, privacy: Privacy) -> bool {
+    pub fn match_privacy(&self, privacy: PrivacyType) -> bool {
         self.privacy == privacy
     }
 }
@@ -140,7 +140,7 @@ pub struct PostEvent {
     name: String,
     description: String,
     date: DateRange,
-    privacy: Privacy,
+    privacy: PrivacyType,
     website: String,
     location: Location,
     image: Asset,
@@ -155,7 +155,7 @@ pub struct UpdateEvent {
     pub name: String,
     pub description: String,
     pub date: DateRange,
-    pub privacy: Privacy,
+    pub privacy: PrivacyType,
     pub website: String,
     pub location: Location,
     pub image: Asset,
@@ -281,7 +281,7 @@ pub struct EventResponse {
     pub name: String,
     pub description: String,
     pub date: DateRange,
-    pub privacy: Privacy,
+    pub privacy: PrivacyType,
     pub created_by: Principal,
     pub owner: Principal,
     pub website: String,
