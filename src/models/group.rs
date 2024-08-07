@@ -156,7 +156,7 @@ impl Group {
         self.special_members
             .get(&member)
             .map(|relation| relation == &RelationType::Blocked.to_string())
-            .unwrap_or(false)
+            .unwrap_or_default()
     }
 }
 

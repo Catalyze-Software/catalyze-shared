@@ -74,7 +74,7 @@ impl Profile {
             last_name: profile.last_name,
             privacy: profile.privacy,
             about: profile.about,
-            email: profile.email.unwrap_or("".to_string()),
+            email: profile.email.unwrap_or_default(),
             date_of_birth: profile.date_of_birth,
             city: profile.city,
             state_or_province: profile.state_or_province,
