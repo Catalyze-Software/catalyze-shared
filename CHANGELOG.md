@@ -25,3 +25,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Split `ProfileWithRefs` into seperate structs
 - - Split `GroupWithMembers` into seperate structs
 - - Split `EventWithAttendees` into seperate structs
+- Extract `insert` method from the `StorageClient` trait to the two new traits
+  `StorageClientInsertable` and `StorageClientInsertableByKey` to allow working with the incrementing
+  keys
