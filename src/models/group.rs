@@ -7,17 +7,12 @@ use serde::Serialize;
 use crate::{
     impl_storable_for,
     misc::role_misc::default_roles,
-    models::{
-        asset::Asset, date_range::DateRange, location::Location, privacy::Privacy, role::Role,
-        sort_direction::SortDirection,
-    },
-    Filter, Sorter,
+    models::{asset::Asset, location::Location, privacy::PrivacyType, role::Role},
 };
 
 use super::{
-    api_error::ApiError,
-    boosted::Boost,
-    member::{InviteMemberResponse, JoinedMemberResponse},
+    group_with_members::{PostGroup, UpdateGroup},
+    old_member::{InviteMemberResponse, JoinedMemberResponse},
     permission::Permission,
     relation_type::RelationType,
 };
@@ -30,7 +25,7 @@ pub struct Group {
     pub description: String,
     pub website: String,
     pub location: Location,
-    pub privacy: Privacy,
+    pub privacy: PrivacyType,
     pub owner: Principal,
     pub created_by: Principal,
     pub matrix_space_id: String,
@@ -161,38 +156,11 @@ impl Group {
         self.special_members
             .get(&member)
             .map(|relation| relation == &RelationType::Blocked.to_string())
-            .unwrap_or(false)
+            .unwrap_or_default()
     }
 }
 
 pub type GroupEntry = (u64, Group);
-
-#[derive(Clone, CandidType, Deserialize)]
-pub struct PostGroup {
-    pub name: String,
-    pub description: String,
-    pub website: String,
-    pub matrix_space_id: String,
-    pub location: Location,
-    pub privacy: Privacy,
-    pub privacy_gated_type_amount: Option<u64>,
-    pub image: Asset,
-    pub banner_image: Asset,
-    pub tags: Vec<u32>,
-}
-
-#[derive(Clone, CandidType, Deserialize, Debug)]
-pub struct UpdateGroup {
-    pub name: String,
-    pub description: String,
-    pub website: String,
-    pub location: Location,
-    pub privacy: Privacy,
-    pub image: Asset,
-    pub privacy_gated_type_amount: Option<u64>,
-    pub banner_image: Asset,
-    pub tags: Vec<u32>,
-}
 
 #[derive(Clone, CandidType, Serialize, Deserialize, Debug)]
 pub struct GroupCallerData {
@@ -215,200 +183,5 @@ impl GroupCallerData {
             is_starred,
             is_pinned,
         }
-    }
-}
-
-#[derive(Clone, CandidType, Serialize, Deserialize, Debug)]
-pub struct GroupResponse {
-    pub id: u64,
-    pub name: String,
-    pub description: String,
-    pub website: String,
-    pub location: Location,
-    pub privacy: Privacy,
-    pub created_by: Principal,
-    pub owner: Principal,
-    pub matrix_space_id: String,
-    pub image: Asset,
-    pub banner_image: Asset,
-    pub tags: Vec<u32>,
-    pub roles: Vec<Role>,
-    pub wallets: Vec<(Principal, String)>,
-    pub is_deleted: bool,
-    pub privacy_gated_type_amount: Option<u64>,
-    pub updated_on: u64,
-    pub created_on: u64,
-    pub boosted: Option<Boost>,
-    pub events_count: u64,
-    pub members_count: u64,
-    pub caller_data: Option<GroupCallerData>,
-}
-
-impl GroupResponse {
-    pub fn new(
-        id: u64,
-        group: Group,
-        boosted: Option<Boost>,
-        events_count: u64,
-        members_count: u64,
-        caller_data: Option<GroupCallerData>,
-    ) -> Self {
-        let mut roles = default_roles();
-        roles.append(&mut group.roles.clone());
-        Self {
-            id,
-            name: group.name,
-            description: group.description,
-            website: group.website,
-            location: group.location,
-            privacy: group.privacy,
-            created_by: group.created_by,
-            owner: group.owner,
-            matrix_space_id: group.matrix_space_id,
-            image: group.image,
-            banner_image: group.banner_image,
-            tags: group.tags,
-            roles,
-            wallets: group.wallets.into_iter().collect(),
-            is_deleted: group.is_deleted,
-            caller_data,
-            privacy_gated_type_amount: group.privacy_gated_type_amount,
-            boosted,
-            updated_on: group.updated_on,
-            created_on: group.created_on,
-            events_count,
-            members_count,
-        }
-    }
-
-    pub fn from_result(
-        group_result: Result<(u64, Group), ApiError>,
-        boosted: Option<Boost>,
-        events_count: u64,
-        members_count: u64,
-        caller_data: Option<GroupCallerData>,
-    ) -> Result<Self, ApiError> {
-        match group_result {
-            Err(err) => Err(err),
-            Ok((id, group)) => Ok(Self::new(
-                id,
-                group,
-                boosted,
-                events_count,
-                members_count,
-                caller_data,
-            )),
-        }
-    }
-}
-
-#[derive(Clone, Debug, CandidType, Deserialize)]
-pub enum GroupSort {
-    Name(SortDirection),
-    CreatedOn(SortDirection),
-    UpdatedOn(SortDirection),
-    // MemberCount(SortDirection),
-}
-
-impl Default for GroupSort {
-    fn default() -> Self {
-        GroupSort::CreatedOn(SortDirection::Asc)
-    }
-}
-
-impl Sorter<u64, Group> for GroupSort {
-    fn sort(&self, groups: Vec<(u64, Group)>) -> Vec<(u64, Group)> {
-        let mut groups: Vec<(u64, Group)> = groups.into_iter().collect();
-        use GroupSort::*;
-        use SortDirection::*;
-        match self {
-            Name(Asc) => {
-                groups.sort_by(|(_, a), (_, b)| a.name.to_lowercase().cmp(&b.name.to_lowercase()))
-            }
-            Name(Desc) => {
-                groups.sort_by(|(_, a), (_, b)| b.name.to_lowercase().cmp(&a.name.to_lowercase()))
-            }
-            CreatedOn(Asc) => groups.sort_by(|(_, a), (_, b)| a.created_on.cmp(&b.created_on)),
-            CreatedOn(Desc) => groups.sort_by(|(_, a), (_, b)| b.created_on.cmp(&a.created_on)),
-            UpdatedOn(Asc) => groups.sort_by(|(_, a), (_, b)| a.updated_on.cmp(&b.updated_on)),
-            UpdatedOn(Desc) => groups.sort_by(|(_, a), (_, b)| b.updated_on.cmp(&a.updated_on)),
-            // MemberCount(Asc) => groups.sort_by(|(a_id, _), (b_id, _)| {
-            //     let a_members = group_members
-            //         .get(a_id)
-            //         .map(|m| m.get_member_count())
-            //         .unwrap_or(0);
-            //     let b_members = group_members
-            //         .get(b_id)
-            //         .map(|m| m.get_member_count())
-            //         .unwrap_or(0);
-            //     a_members.cmp(&b_members)
-            // }),
-            // MemberCount(Desc) => groups.sort_by(|(a_id, _), (b_id, _)| {
-            //     let a_members = group_members
-            //         .get(a_id)
-            //         .map(|m| m.get_member_count())
-            //         .unwrap_or(0);
-            //     let b_members = group_members
-            //         .get(b_id)
-            //         .map(|m| m.get_member_count())
-            //         .unwrap_or(0);
-            //     b_members.cmp(&a_members)
-            // }),
-        }
-        groups
-    }
-}
-
-#[derive(Clone, Debug, CandidType, Deserialize, Serialize)]
-pub struct GroupsCount {
-    pub total: u64,
-    pub joined: u64,
-    pub invited: u64,
-    pub starred: u64,
-    pub new: u64,
-}
-
-#[derive(Clone, Debug, CandidType, Deserialize, Default)]
-pub enum GroupFilter {
-    #[default]
-    None,
-    Name(String),
-    Owner(Principal),
-    Ids(Vec<u64>),
-    Tag(u32),
-    UpdatedOn(DateRange),
-    CreatedOn(DateRange),
-}
-
-impl Filter<u64, Group> for GroupFilter {
-    fn matches(&self, id: &u64, group: &Group) -> bool {
-        use GroupFilter::*;
-        match self {
-            None => true,
-            Name(name) => group.name.to_lowercase().contains(&name.to_lowercase()),
-            Owner(owner) => group.owner == *owner,
-            Ids(ids) => ids.contains(id),
-            Tag(tag) => group.tags.contains(tag),
-            UpdatedOn(range) => {
-                if range.end_date() > 0 {
-                    range.is_within(group.updated_on)
-                } else {
-                    range.is_after_start_date(group.updated_on)
-                }
-            }
-            CreatedOn(range) => {
-                if range.end_date() > 0 {
-                    range.is_within(group.updated_on)
-                } else {
-                    range.is_after_start_date(group.updated_on)
-                }
-            }
-        }
-    }
-}
-
-impl From<GroupFilter> for Vec<GroupFilter> {
-    fn from(val: GroupFilter) -> Self {
-        vec![val]
     }
 }

@@ -18,7 +18,7 @@ use super::{
     document_details::DocumentDetails,
     profile_privacy::ProfilePrivacy,
     subject::Subject,
-    wallet::{Wallet, WalletResponse},
+    wallet::{OldWalletResponse, Wallet},
 };
 
 impl_storable_for!(Profile);
@@ -27,10 +27,8 @@ impl_storable_for!(Profile);
 pub struct Profile {
     pub username: String,
     pub display_name: String,
-    pub application_role: ApplicationRole,
     pub first_name: String,
     pub last_name: String,
-    pub privacy: ProfilePrivacy,
     pub about: String,
     pub email: String,
     pub date_of_birth: u64,
@@ -39,10 +37,12 @@ pub struct Profile {
     pub country: String,
     pub profile_image: Asset,
     pub banner_image: Asset,
+    pub website: String,
+    pub application_role: ApplicationRole,
+    pub privacy: ProfilePrivacy,
     pub skills: Vec<u32>,
     pub interests: Vec<u32>,
     pub causes: Vec<u32>,
-    pub website: String,
     pub code_of_conduct: Option<DocumentDetails>,
     pub privacy_policy: Option<DocumentDetails>,
     pub terms_of_service: Option<DocumentDetails>,
@@ -74,7 +74,7 @@ impl Profile {
             last_name: profile.last_name,
             privacy: profile.privacy,
             about: profile.about,
-            email: profile.email.unwrap_or("".to_string()),
+            email: profile.email.unwrap_or_default(),
             date_of_birth: profile.date_of_birth,
             city: profile.city,
             state_or_province: profile.state_or_province,
@@ -211,7 +211,7 @@ pub struct ProfileResponse {
     pub terms_of_service: Option<DocumentDetails>,
     pub pinned: Vec<Subject>,
     pub starred: Vec<Subject>,
-    pub wallets: Vec<WalletResponse>,
+    pub wallets: Vec<OldWalletResponse>,
     pub extra: String,
     pub updated_on: u64,
     pub created_on: u64,
@@ -222,7 +222,7 @@ impl ProfileResponse {
         let wallets = profile
             .wallets
             .into_iter()
-            .map(|(principal, wallet)| WalletResponse {
+            .map(|(principal, wallet)| OldWalletResponse {
                 provider: wallet.provider,
                 principal,
                 is_primary: wallet.is_primary,
@@ -271,7 +271,7 @@ impl From<ProfileEntry> for ProfileResponse {
         let wallets = profile
             .wallets
             .into_iter()
-            .map(|(principal, wallet)| WalletResponse {
+            .map(|(principal, wallet)| OldWalletResponse {
                 provider: wallet.provider,
                 principal,
                 is_primary: wallet.is_primary,
