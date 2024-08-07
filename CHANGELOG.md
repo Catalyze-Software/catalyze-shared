@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `GroupWithMembers` struct which includes members, invites and event ids
 - `EventWithAttendees` struct which includes attendees and invites
 - `ProfileWithRefs` struct which includes references to joined groups and events
+- `get_paginated` and `filter_paginated` method implementations for the storage client
 
 ### Changed
 
