@@ -6,7 +6,11 @@ use candid::{Decode, Encode};
 
 use crate::{impl_storable_for, Filter, Sorter};
 
-use super::{date_range::DateRange, sort_direction::SortDirection, subject::Subject};
+use super::{
+    date_range::DateRange,
+    sort_direction::SortDirection,
+    subject::{Subject, SubjectType},
+};
 
 impl_storable_for!(Boost);
 
@@ -83,6 +87,8 @@ pub enum BoostedFilter {
     #[default]
     None,
     Ids(Vec<u64>),
+    Subject(Subject),
+    SubjectType(SubjectType),
     Owner(Principal),
     UpdatedAt(DateRange),
     CreatedAt(DateRange),
@@ -94,6 +100,8 @@ impl Filter<u64, Boost> for BoostedFilter {
         match self {
             None => true,
             Ids(ids) => ids.contains(id),
+            Subject(subject) => *subject == boosted.subject,
+            SubjectType(subject_type) => *subject_type == boosted.subject.get_type(),
             Owner(owner) => *owner == boosted.owner,
             UpdatedAt(date) => date.is_within(boosted.updated_at),
             CreatedAt(date) => date.is_within(boosted.created_at),
