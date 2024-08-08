@@ -108,3 +108,9 @@ impl Filter<u64, Boost> for BoostedFilter {
         }
     }
 }
+
+impl From<BoostedFilter> for Vec<BoostedFilter> {
+    fn from(val: BoostedFilter) -> Self {
+        vec![val]
+    }
+}
