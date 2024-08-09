@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 use ic_stable_structures::Storable;
 
 use crate::{CellStorage, StaticCellStorageRef};
@@ -8,8 +10,11 @@ pub struct GenericCellStorage<V: 'static + Clone + Storable> {
 }
 
 impl<V: 'static + Clone + Storable> GenericCellStorage<V> {
-    pub fn new(name: String, storage: StaticCellStorageRef<V>) -> Self {
-        Self { name, storage }
+    pub fn new<T: Display>(name: T, storage: StaticCellStorageRef<V>) -> Self {
+        Self {
+            name: name.to_string(),
+            storage,
+        }
     }
 }
 
