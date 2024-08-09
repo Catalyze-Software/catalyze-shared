@@ -226,6 +226,10 @@ impl GroupWithMembers {
             .map(|relation| relation == &RelationType::Blocked.to_string())
             .unwrap_or_default()
     }
+
+    pub fn is_member(&mut self, member: Principal) -> bool {
+        self.members.exists(member)
+    }
 }
 
 pub type GroupEntry = (u64, GroupWithMembers);

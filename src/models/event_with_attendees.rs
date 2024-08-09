@@ -188,6 +188,10 @@ impl EventWithAttendees {
             .map(|relation| relation == &RelationType::Blocked.to_string())
             .unwrap_or_default()
     }
+
+    pub fn is_attendee(&mut self, attendee: Principal) -> bool {
+        self.attendees.exists(attendee)
+    }
 }
 
 impl Default for EventWithAttendees {
