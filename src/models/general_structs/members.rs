@@ -41,7 +41,7 @@ impl Members {
         }
     }
 
-    pub fn exists(&mut self, member: Principal) -> bool {
+    pub fn exists(&self, member: Principal) -> bool {
         self.members.contains_key(&member)
     }
 }

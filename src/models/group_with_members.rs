@@ -227,7 +227,7 @@ impl GroupWithMembers {
             .unwrap_or_default()
     }
 
-    pub fn is_member(&mut self, member: Principal) -> bool {
+    pub fn is_member(&self, member: Principal) -> bool {
         self.members.exists(member)
     }
 }

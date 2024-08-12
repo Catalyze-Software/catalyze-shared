@@ -189,7 +189,7 @@ impl EventWithAttendees {
             .unwrap_or_default()
     }
 
-    pub fn is_attendee(&mut self, attendee: Principal) -> bool {
+    pub fn is_attendee(&self, attendee: Principal) -> bool {
         self.attendees.exists(attendee)
     }
 }
