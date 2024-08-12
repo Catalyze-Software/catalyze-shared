@@ -228,7 +228,11 @@ impl GroupWithMembers {
     }
 
     pub fn is_member(&self, member: Principal) -> bool {
-        self.members.exists(member)
+        self.members.is_member(member)
+    }
+
+    pub fn is_invited(&self, invitee: Principal) -> bool {
+        self.members.is_invited(invitee)
     }
 }
 

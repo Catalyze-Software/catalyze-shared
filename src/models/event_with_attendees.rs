@@ -190,7 +190,11 @@ impl EventWithAttendees {
     }
 
     pub fn is_attendee(&self, attendee: Principal) -> bool {
-        self.attendees.exists(attendee)
+        self.attendees.is_member(attendee)
+    }
+
+    pub fn is_invited(&self, invitee: Principal) -> bool {
+        self.attendees.is_invited(invitee)
     }
 
     pub fn is_invite_only(&self) -> bool {

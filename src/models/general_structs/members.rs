@@ -41,7 +41,11 @@ impl Members {
         }
     }
 
-    pub fn exists(&self, member: Principal) -> bool {
+    pub fn is_member(&self, member: Principal) -> bool {
         self.members.contains_key(&member)
+    }
+
+    pub fn is_invited(&self, member: Principal) -> bool {
+        self.invites.contains_key(&member)
     }
 }
