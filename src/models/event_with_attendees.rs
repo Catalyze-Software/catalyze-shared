@@ -114,6 +114,12 @@ impl EventWithAttendees {
         self.clone()
     }
 
+    pub fn cancel(&mut self, reason: String) -> Self {
+        self.is_canceled = Some(reason);
+        self.updated_on = time();
+        self.clone()
+    }
+
     pub fn get_members(&self) -> Vec<Principal> {
         self.attendees.members.keys().cloned().collect()
     }
