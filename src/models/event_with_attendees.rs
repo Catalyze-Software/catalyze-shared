@@ -192,6 +192,10 @@ impl EventWithAttendees {
     pub fn is_attendee(&self, attendee: Principal) -> bool {
         self.attendees.exists(attendee)
     }
+
+    pub fn is_invite_only(&self) -> bool {
+        self.privacy.privacy_type == PrivacyType::InviteOnly
+    }
 }
 
 impl Default for EventWithAttendees {
@@ -308,6 +312,7 @@ pub enum EventFilter {
     IsCanceled(bool),
     UpdatedOn(DateRange),
     CreatedOn(DateRange),
+    OptionallyInvited(Principal),
 }
 
 impl Filter<u64, EventWithAttendees> for EventFilter {
@@ -335,6 +340,10 @@ impl Filter<u64, EventWithAttendees> for EventFilter {
             IsCanceled(is_canceled) => event.is_canceled.is_some() == *is_canceled,
             UpdatedOn(date) => date.is_within(event.updated_on),
             CreatedOn(date) => date.is_within(event.created_on),
+            OptionallyInvited(principal) => match event.is_invite_only() {
+                true => event.is_attendee(*principal),
+                false => true,
+            },
         }
     }
 }
