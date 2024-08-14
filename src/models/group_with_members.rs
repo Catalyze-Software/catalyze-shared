@@ -234,6 +234,10 @@ impl GroupWithMembers {
     pub fn is_invited(&self, invitee: Principal) -> bool {
         self.members.is_invited(invitee)
     }
+
+    pub fn is_invite_only(&self) -> bool {
+        self.privacy.privacy_type == PrivacyType::InviteOnly
+    }
 }
 
 pub type GroupEntry = (u64, GroupWithMembers);
@@ -394,6 +398,7 @@ pub enum GroupFilter {
     Tag(u32),
     UpdatedOn(DateRange),
     CreatedOn(DateRange),
+    OptionallyInvited(Principal),
 }
 
 impl Filter<u64, GroupWithMembers> for GroupFilter {
@@ -423,6 +428,10 @@ impl Filter<u64, GroupWithMembers> for GroupFilter {
                     range.is_after_start_date(group.updated_on)
                 }
             }
+            OptionallyInvited(principal) => match group.is_invite_only() {
+                true => group.is_member(*principal),
+                false => true,
+            },
         }
     }
 }
