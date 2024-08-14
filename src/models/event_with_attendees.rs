@@ -231,17 +231,17 @@ pub type EventEntry = (u64, EventWithAttendees);
 
 #[derive(Clone, Debug, CandidType, Deserialize)]
 pub struct PostEvent {
-    name: String,
-    description: String,
-    date: DateRange,
-    privacy: PrivacyType,
-    website: String,
-    location: Location,
-    image: Asset,
-    banner_image: Asset,
-    group_id: Option<u64>,
-    metadata: Option<String>,
-    tags: Vec<u32>,
+    pub name: String,
+    pub description: String,
+    pub date: DateRange,
+    pub privacy: PrivacyType,
+    pub website: String,
+    pub location: Location,
+    pub image: Asset,
+    pub banner_image: Asset,
+    pub group_id: Option<u64>,
+    pub metadata: Option<String>,
+    pub tags: Vec<u32>,
 }
 
 #[derive(Clone, Debug, CandidType, Deserialize)]
