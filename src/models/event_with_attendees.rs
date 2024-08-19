@@ -8,7 +8,7 @@ use crate::{
         asset::Asset, date_range::DateRange, location::Location, privacy::PrivacyType,
         sort_direction::SortDirection,
     },
-    Filter, Sorter,
+    CanisterResult, Filter, Sorter,
 };
 
 use super::{
@@ -81,6 +81,15 @@ impl EventWithAttendees {
         self.references.tags = event.tags;
         self.updated_on = time();
         self.clone()
+    }
+
+    pub fn ensured_group_id(&self) -> CanisterResult<u64> {
+        self.group_id.ok_or_else(|| {
+            ApiError::unexpected()
+                .add_method_name("ensured_group_id")
+                .add_message("Group ID is not set")
+                .add_tag("event")
+        })
     }
 
     pub fn get_total_date_range(&self) -> DateRange {
