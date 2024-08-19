@@ -450,3 +450,5 @@ impl From<EventFilter> for Vec<EventFilter> {
         vec![val]
     }
 }
+
+pub type EventWithAttendeesEntry = (u64, EventWithAttendees);

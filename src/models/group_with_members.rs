@@ -441,3 +441,5 @@ impl From<GroupFilter> for Vec<GroupFilter> {
         vec![val]
     }
 }
+
+pub type GroupWithMembersEntry = (u64, GroupWithMembers);

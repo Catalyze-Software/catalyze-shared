@@ -377,3 +377,5 @@ impl From<ProfileFilter> for Vec<ProfileFilter> {
         vec![val]
     }
 }
+
+pub type ProfileWithRefsEntry = (Principal, ProfileWithRefs);
