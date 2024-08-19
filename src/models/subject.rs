@@ -56,6 +56,6 @@ pub enum SubjectResponse {
     Group(Option<GroupWithMembersEntry>),
     Event(Option<EventWithAttendeesEntry>),
     Profile(Option<ProfileWithRefsEntry>),
-    Member(Option<(Principal, u64)>),
-    Attendee(Option<(Principal, u64)>),
+    Member(Option<(Principal, Vec<u64>)>),
+    Attendee(Option<(Principal, Vec<u64>)>),
 }
