@@ -452,3 +452,4 @@ impl From<EventFilter> for Vec<EventFilter> {
 }
 
 pub type EventWithAttendeesEntry = (u64, EventWithAttendees);
+pub type Attendee = (Principal, Vec<u64>);
