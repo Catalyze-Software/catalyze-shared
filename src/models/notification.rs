@@ -4,12 +4,13 @@ use serde::{Deserialize, Serialize};
 
 use candid::{Decode, Encode};
 
-use crate::impl_storable_for;
+use crate::{impl_storable_for, Filter, Sorter};
 
 use super::{
     attendee::{InviteAttendeeResponse, JoinedAttendeeResponse},
     friend_request::FriendRequestResponse,
     old_member::{InviteMemberResponse, JoinedMemberResponse},
+    sort_direction::SortDirection,
     transaction_data::{TransactionCompleteData, TransactionData},
     user_notifications::UserNotificationData,
 };
@@ -64,6 +65,99 @@ impl Notification {
 }
 
 pub type NotificationEntry = (u64, Notification);
+
+#[derive(Clone, Debug, CandidType, Deserialize)]
+pub enum NotificationSort {
+    CreatedOn(SortDirection),
+    UpdatedOn(SortDirection),
+}
+
+impl Default for NotificationSort {
+    fn default() -> Self {
+        NotificationSort::CreatedOn(SortDirection::Asc)
+    }
+}
+
+impl Sorter<u64, Notification> for NotificationSort {
+    fn sort(&self, notifications: Vec<(u64, Notification)>) -> Vec<(u64, Notification)> {
+        let mut notifications: Vec<(u64, Notification)> = notifications.into_iter().collect();
+        use NotificationSort::*;
+        use SortDirection::*;
+        match self {
+            CreatedOn(Asc) => {
+                notifications.sort_by(|(_, a), (_, b)| a.created_at.cmp(&b.created_at))
+            }
+            CreatedOn(Desc) => {
+                notifications.sort_by(|(_, a), (_, b)| b.created_at.cmp(&a.created_at))
+            }
+            UpdatedOn(Asc) => {
+                notifications.sort_by(|(_, a), (_, b)| a.updated_at.cmp(&b.updated_at))
+            }
+            UpdatedOn(Desc) => {
+                notifications.sort_by(|(_, a), (_, b)| b.updated_at.cmp(&a.updated_at))
+            }
+        }
+        notifications
+    }
+}
+
+#[derive(Clone, Debug, CandidType, Deserialize, Default)]
+pub enum NotificationFilter {
+    #[default]
+    None,
+    Ids(Vec<u64>),
+    Type(NotificationType),
+    Actionable(bool),
+    ProcessedBy(Principal),
+    Sender(Principal),
+}
+
+impl Filter<u64, Notification> for NotificationFilter {
+    fn matches(&self, id: &u64, notification: &Notification) -> bool {
+        use NotificationFilter::*;
+        match self {
+            None => true,
+            Ids(ids) => ids.contains(id),
+            Type(filter) => match filter {
+                NotificationType::Relation(_) => {
+                    matches!(
+                        notification.notification_type,
+                        NotificationType::Relation(_)
+                    )
+                }
+                NotificationType::Group(_) => {
+                    matches!(notification.notification_type, NotificationType::Group(_))
+                }
+                NotificationType::Event(_) => {
+                    matches!(notification.notification_type, NotificationType::Event(_))
+                }
+                NotificationType::Transaction(_) => {
+                    matches!(
+                        notification.notification_type,
+                        NotificationType::Transaction(_)
+                    )
+                }
+                NotificationType::Multisig(_) => {
+                    matches!(
+                        notification.notification_type,
+                        NotificationType::Multisig(_)
+                    )
+                }
+            },
+            Actionable(actionable) => notification.is_actionable == *actionable,
+            ProcessedBy(processed_by) => {
+                matches!(notification.processed_by, Some(principal) if principal == *processed_by)
+            }
+            Sender(sender) => notification.sender == *sender,
+        }
+    }
+}
+
+impl From<NotificationFilter> for Vec<NotificationFilter> {
+    fn from(val: NotificationFilter) -> Self {
+        vec![val]
+    }
+}
 
 #[derive(CandidType, Deserialize, Serialize, Clone, Debug)]
 pub enum NotificationType {
