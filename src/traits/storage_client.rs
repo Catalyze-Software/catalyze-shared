@@ -1,8 +1,10 @@
 use candid::Principal;
 
-use crate::{helpers::ic_call::ic_call, paged_response::PagedResponse, CanisterResult};
+use crate::{
+    helpers::ic_call::ic_call, paged_response::PagedResponse, CanisterResult, GenericCellStorage,
+};
 
-use super::{Filter, Sorter};
+use super::{CellStorage, Filter, Sorter, StaticCellStorageRef};
 
 pub trait StorageClient<K, V, F, S>: Default + Send + Sync
 where
@@ -18,30 +20,39 @@ where
     F: Filter<K, V> + candid::CandidType + Clone + Send + Sync,
     S: Sorter<K, V> + Default + candid::CandidType + Clone + Send + Sync,
 {
-    fn canister(&self) -> CanisterResult<Principal>;
+    fn name(&self) -> String;
+    fn storage_canister_id(&self) -> StaticCellStorageRef<Principal>;
+
+    fn storage(&self) -> impl CellStorage<Principal> {
+        GenericCellStorage::new(self.name(), self.storage_canister_id())
+    }
+
+    fn canister_id(&self) -> CanisterResult<Principal> {
+        self.storage().get()
+    }
 
     fn size(&self) -> impl std::future::Future<Output = CanisterResult<u64>> + Sync + Send {
-        async move { ic_call(self.canister()?, "size", ()).await }
+        async move { ic_call(self.canister_id()?, "size", ()).await }
     }
 
     fn get(
         &self,
         id: K,
     ) -> impl std::future::Future<Output = CanisterResult<(K, V)>> + Sync + Send {
-        async move { ic_call(self.canister()?, "get", (id,)).await }
+        async move { ic_call(self.canister_id()?, "get", (id,)).await }
     }
 
     fn get_many(
         &self,
         keys: Vec<K>,
     ) -> impl std::future::Future<Output = CanisterResult<Vec<(K, V)>>> + Sync + Send {
-        async move { ic_call(self.canister()?, "get_many", (keys,)).await }
+        async move { ic_call(self.canister_id()?, "get_many", (keys,)).await }
     }
 
     fn get_all(
         &self,
     ) -> impl std::future::Future<Output = CanisterResult<Vec<(K, V)>>> + Sync + Send {
-        async move { ic_call(self.canister()?, "get_all", ()).await }
+        async move { ic_call(self.canister_id()?, "get_all", ()).await }
     }
 
     fn get_paginated(
@@ -53,7 +64,7 @@ where
     {
         async move {
             let args = (limit, page, sort);
-            ic_call(self.canister()?, "get_paginated", args).await
+            ic_call(self.canister_id()?, "get_paginated", args).await
         }
     }
 
@@ -61,14 +72,14 @@ where
         &self,
         filters: Vec<F>,
     ) -> impl std::future::Future<Output = CanisterResult<Option<(K, V)>>> + Sync + Send {
-        async move { ic_call(self.canister()?, "find", (filters,)).await }
+        async move { ic_call(self.canister_id()?, "find", (filters,)).await }
     }
 
     fn filter(
         &self,
         filters: Vec<F>,
     ) -> impl std::future::Future<Output = CanisterResult<Vec<(K, V)>>> + Sync + Send {
-        async move { ic_call(self.canister()?, "filter", (filters,)).await }
+        async move { ic_call(self.canister_id()?, "filter", (filters,)).await }
     }
 
     fn filter_paginated(
@@ -81,7 +92,7 @@ where
     {
         async move {
             let args = (limit, page, sort, filters);
-            ic_call(self.canister()?, "filter_paginated", args).await
+            ic_call(self.canister_id()?, "filter_paginated", args).await
         }
     }
 
@@ -90,28 +101,28 @@ where
         key: K,
         value: V,
     ) -> impl std::future::Future<Output = CanisterResult<(K, V)>> + Sync + Send {
-        async move { ic_call(self.canister()?, "update", (key, value)).await }
+        async move { ic_call(self.canister_id()?, "update", (key, value)).await }
     }
 
     fn update_many(
         &self,
         list: Vec<(K, V)>,
     ) -> impl std::future::Future<Output = CanisterResult<Vec<(K, V)>>> + Sync + Send {
-        async move { ic_call(self.canister()?, "update_many", (list,)).await }
+        async move { ic_call(self.canister_id()?, "update_many", (list,)).await }
     }
 
     fn remove(
         &self,
         key: K,
     ) -> impl std::future::Future<Output = CanisterResult<bool>> + Sync + Send {
-        async move { ic_call(self.canister()?, "remove", (key,)).await }
+        async move { ic_call(self.canister_id()?, "remove", (key,)).await }
     }
 
     fn remove_many(
         &self,
         keys: Vec<K>,
     ) -> impl std::future::Future<Output = CanisterResult<()>> + Sync + Send {
-        async move { ic_call(self.canister()?, "remove_many", (keys,)).await }
+        async move { ic_call(self.canister_id()?, "remove_many", (keys,)).await }
     }
 }
 
@@ -125,7 +136,7 @@ where
         &self,
         value: V,
     ) -> impl std::future::Future<Output = CanisterResult<(u64, V)>> + Sync + Send {
-        async move { ic_call(self.canister()?, "insert", (value,)).await }
+        async move { ic_call(self.canister_id()?, "insert", (value,)).await }
     }
 }
 
@@ -148,6 +159,6 @@ where
         key: K,
         value: V,
     ) -> impl std::future::Future<Output = CanisterResult<(K, V)>> + Sync + Send {
-        async move { ic_call(self.canister()?, "insert", (key, value)).await }
+        async move { ic_call(self.canister_id()?, "insert", (key, value)).await }
     }
 }

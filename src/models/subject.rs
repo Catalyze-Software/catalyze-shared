@@ -1,7 +1,10 @@
 use candid::{CandidType, Principal};
 use serde::{Deserialize, Serialize};
 
-use super::{attendee::Attendee, event::Event, group::Group, old_member::Member, profile::Profile};
+use super::{
+    event_with_attendees::EventWithAttendeesEntry, group_with_members::GroupWithMembersEntry,
+    profile_with_refs::ProfileWithRefsEntry,
+};
 
 #[derive(
     CandidType, Deserialize, Serialize, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Default,
@@ -50,9 +53,9 @@ pub enum SubjectType {
 #[derive(CandidType, Deserialize, Serialize, Clone, Debug)]
 pub enum SubjectResponse {
     None,
-    Group(Option<(u64, Group)>),
-    Event(Option<(u64, Event)>),
-    Profile(Option<(Principal, Profile)>),
-    Member(Option<(Principal, Member)>),
-    Attendee(Option<(Principal, Attendee)>),
+    Group(Option<GroupWithMembersEntry>),
+    Event(Option<EventWithAttendeesEntry>),
+    Profile(Option<ProfileWithRefsEntry>),
+    Member(Option<(Principal, Vec<u64>)>),
+    Attendee(Option<(Principal, Vec<u64>)>),
 }

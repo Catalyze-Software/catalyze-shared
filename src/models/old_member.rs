@@ -6,7 +6,10 @@ use serde::Serialize;
 
 use crate::impl_storable_for;
 
-use super::invite_type::InviteType;
+use super::{
+    invite_type::InviteType,
+    member::{Invite, Join},
+};
 
 pub type GroupIdentifier = Principal;
 
@@ -164,13 +167,6 @@ impl Member {
 
 pub type MemberEntry = (Principal, Member);
 
-#[derive(CandidType, Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
-pub struct Join {
-    pub roles: Vec<String>,
-    pub updated_at: u64,
-    pub created_at: u64,
-}
-
 #[derive(Clone, Debug, CandidType, Deserialize, Serialize)]
 pub struct MemberInvite {
     pub notification_id: Option<u64>,
@@ -189,6 +185,17 @@ impl MemberInvite {
     }
 }
 
+impl From<Invite> for MemberInvite {
+    fn from(invite: Invite) -> Self {
+        Self {
+            notification_id: invite.notification_id,
+            invite_type: invite.invite_type,
+            updated_at: invite.updated_at,
+            created_at: invite.created_at,
+        }
+    }
+}
+
 #[derive(Clone, Debug, CandidType, Deserialize, Serialize)]
 pub struct JoinedMemberResponse {
     pub group_id: u64,
@@ -197,11 +204,11 @@ pub struct JoinedMemberResponse {
 }
 
 impl JoinedMemberResponse {
-    pub fn new(principal: Principal, member: Member, group_id: u64) -> Self {
+    pub fn new(principal: Principal, roles: Vec<String>, group_id: u64) -> Self {
         Self {
             group_id,
             principal,
-            roles: member.get_roles(group_id),
+            roles,
         }
     }
 }
@@ -214,11 +221,11 @@ pub struct InviteMemberResponse {
 }
 
 impl InviteMemberResponse {
-    pub fn new(principal: Principal, member: Member, group_id: u64) -> Self {
+    pub fn new(principal: Principal, invite: Option<MemberInvite>, group_id: u64) -> Self {
         Self {
             group_id,
             principal,
-            invite: member.get_invite(&group_id),
+            invite,
         }
     }
 }

@@ -8,7 +8,7 @@ use crate::{
         asset::Asset, date_range::DateRange, location::Location, privacy::PrivacyType,
         sort_direction::SortDirection,
     },
-    Filter, Sorter,
+    CanisterResult, Filter, Sorter,
 };
 
 use super::{
@@ -83,6 +83,15 @@ impl EventWithAttendees {
         self.clone()
     }
 
+    pub fn ensured_group_id(&self) -> CanisterResult<u64> {
+        self.group_id.ok_or_else(|| {
+            ApiError::unexpected()
+                .add_method_name("ensured_group_id")
+                .add_message("Group ID is not set")
+                .add_tag("event")
+        })
+    }
+
     pub fn get_total_date_range(&self) -> DateRange {
         let mut start_dates = self.dates.clone();
         start_dates.sort_by_key(|range| range.start_date());
@@ -110,6 +119,12 @@ impl EventWithAttendees {
 
     pub fn delete(&mut self) -> Self {
         self.is_deleted = true;
+        self.updated_on = time();
+        self.clone()
+    }
+
+    pub fn cancel(&mut self, reason: String) -> Self {
+        self.is_canceled = Some(reason);
         self.updated_on = time();
         self.clone()
     }
@@ -188,6 +203,18 @@ impl EventWithAttendees {
             .map(|relation| relation == &RelationType::Blocked.to_string())
             .unwrap_or_default()
     }
+
+    pub fn is_attendee(&self, attendee: Principal) -> bool {
+        self.attendees.is_member(attendee)
+    }
+
+    pub fn is_invited(&self, invitee: Principal) -> bool {
+        self.attendees.is_invited(invitee)
+    }
+
+    pub fn is_invite_only(&self) -> bool {
+        self.privacy.privacy_type == PrivacyType::InviteOnly
+    }
 }
 
 impl Default for EventWithAttendees {
@@ -213,17 +240,17 @@ pub type EventEntry = (u64, EventWithAttendees);
 
 #[derive(Clone, Debug, CandidType, Deserialize)]
 pub struct PostEvent {
-    name: String,
-    description: String,
-    date: DateRange,
-    privacy: PrivacyType,
-    website: String,
-    location: Location,
-    image: Asset,
-    banner_image: Asset,
-    group_id: Option<u64>,
-    metadata: Option<String>,
-    tags: Vec<u32>,
+    pub name: String,
+    pub description: String,
+    pub date: DateRange,
+    pub privacy: PrivacyType,
+    pub website: String,
+    pub location: Location,
+    pub image: Asset,
+    pub banner_image: Asset,
+    pub group_id: Option<u64>,
+    pub metadata: Option<String>,
+    pub tags: Vec<u32>,
 }
 
 #[derive(Clone, Debug, CandidType, Deserialize)]
@@ -304,6 +331,7 @@ pub enum EventFilter {
     IsCanceled(bool),
     UpdatedOn(DateRange),
     CreatedOn(DateRange),
+    OptionallyInvited(Principal),
 }
 
 impl Filter<u64, EventWithAttendees> for EventFilter {
@@ -331,6 +359,10 @@ impl Filter<u64, EventWithAttendees> for EventFilter {
             IsCanceled(is_canceled) => event.is_canceled.is_some() == *is_canceled,
             UpdatedOn(date) => date.is_within(event.updated_on),
             CreatedOn(date) => date.is_within(event.created_on),
+            OptionallyInvited(principal) => match event.is_invite_only() {
+                true => event.is_attendee(*principal),
+                false => true,
+            },
         }
     }
 }
@@ -418,3 +450,6 @@ impl From<EventFilter> for Vec<EventFilter> {
         vec![val]
     }
 }
+
+pub type EventWithAttendeesEntry = (u64, EventWithAttendees);
+pub type Attendee = (Principal, Vec<u64>);

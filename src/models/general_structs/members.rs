@@ -17,6 +17,17 @@ pub struct Members {
 }
 
 impl Members {
+    pub fn new_with_owner(owner: Principal) -> Self {
+        let mut members = HashMap::new();
+        members.insert(owner, Join::default().set_owner_role());
+        Self {
+            members,
+            invites: Default::default(),
+            special_members: Default::default(),
+            roles: Default::default(),
+        }
+    }
+
     pub fn set_owner(&mut self, new_owner: Principal) {
         if let Some((_, join)) = self
             .members
@@ -30,14 +41,11 @@ impl Members {
         }
     }
 
-    pub fn new_with_owner(owner: Principal) -> Self {
-        let mut members = HashMap::new();
-        members.insert(owner, Join::default().set_owner_role());
-        Self {
-            members,
-            invites: Default::default(),
-            special_members: Default::default(),
-            roles: Default::default(),
-        }
+    pub fn is_member(&self, member: Principal) -> bool {
+        self.members.contains_key(&member)
+    }
+
+    pub fn is_invited(&self, member: Principal) -> bool {
+        self.invites.contains_key(&member)
     }
 }

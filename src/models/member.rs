@@ -79,6 +79,11 @@ impl Join {
         self.roles = vec![role];
         self.updated_at = time();
     }
+
+    pub fn remove_role(&mut self, role: String) {
+        self.roles.retain(|r| r != &role);
+        self.updated_at = time();
+    }
 }
 
 #[derive(Clone, Debug, CandidType, Deserialize, Serialize)]

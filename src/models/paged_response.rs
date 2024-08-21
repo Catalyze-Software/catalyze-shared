@@ -51,6 +51,16 @@ impl<T: Clone> PagedResponse<T> {
         }
     }
 
+    pub fn map<R: Clone>(&self, f: impl Fn(&T) -> R) -> PagedResponse<R> {
+        PagedResponse {
+            page: self.page,
+            limit: self.limit,
+            total: self.total,
+            number_of_pages: self.number_of_pages,
+            data: self.data.iter().map(f).collect(),
+        }
+    }
+
     pub fn into_result(self) -> CanisterResult<Self> {
         Ok(self)
     }
