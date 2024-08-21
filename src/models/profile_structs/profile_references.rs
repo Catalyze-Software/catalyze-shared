@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use candid::{CandidType, Principal};
 use serde::{Deserialize, Serialize};
 
-use crate::{subject::Subject, wallet::Wallet};
+use crate::{subject::Subject, user_notifications::UserNotifications, wallet::Wallet};
 
 #[derive(Clone, CandidType, Serialize, Deserialize, Debug, Default)]
 pub struct ProfileReferences {
@@ -14,6 +14,7 @@ pub struct ProfileReferences {
     pub pinned: Vec<Subject>,
     pub groups: Vec<u64>,
     pub events: Vec<u64>,
+    pub notifications: UserNotifications,
     pub wallets: HashMap<String, Wallet>,
     pub relations: HashMap<Principal, String>,
 }
