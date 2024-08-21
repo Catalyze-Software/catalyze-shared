@@ -127,10 +127,6 @@ impl ProfileWithRefs {
         self.references.events.push(event_id);
     }
 
-    pub fn add_notification(&mut self, id: u64, is_read: bool, is_sender: bool) {
-        self.references.notifications.add(id, is_read, is_sender)
-    }
-
     pub fn is_event_attendee(&self, event_id: u64) -> bool {
         self.references.events.contains(&event_id)
     }
