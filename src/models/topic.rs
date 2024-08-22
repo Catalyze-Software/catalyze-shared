@@ -3,7 +3,7 @@ use std::fmt::{Display, Formatter};
 use candid::{CandidType, Deserialize};
 use serde::Serialize;
 
-use crate::{str::eq_str, Sorter};
+use crate::{str::eq_str, Filter, Sorter};
 
 use super::{api_error::ApiError, sort_direction::SortDirection};
 
@@ -81,8 +81,8 @@ pub enum TopicFilter {
     Value(String),
 }
 
-impl TopicFilter {
-    pub fn matches(&self, topic: &Topic) -> bool {
+impl Filter<u64, Topic> for TopicFilter {
+    fn matches(&self, _key: &u64, topic: &Topic) -> bool {
         match self {
             TopicFilter::Kind(kind) => topic.kind == *kind,
             TopicFilter::Value(value) => eq_str(topic.value.clone(), value.clone()),
