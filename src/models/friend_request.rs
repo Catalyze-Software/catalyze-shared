@@ -2,7 +2,7 @@ use candid::{CandidType, Decode, Encode, Principal};
 use ic_cdk::api::time;
 use serde::{Deserialize, Serialize};
 
-use crate::{impl_storable_for, Filter};
+use crate::{impl_storable_for, Filter, Sorter};
 
 use super::sort_direction::SortDirection;
 
@@ -47,6 +47,20 @@ pub enum FriendRequestSort {
 impl Default for FriendRequestSort {
     fn default() -> Self {
         FriendRequestSort::CreatedAt(SortDirection::Asc)
+    }
+}
+
+impl Sorter<u64, FriendRequest> for FriendRequestSort {
+    fn sort(&self, requests: Vec<(u64, FriendRequest)>) -> Vec<(u64, FriendRequest)> {
+        let mut requests = requests;
+
+        use FriendRequestSort::*;
+        use SortDirection::*;
+        match self {
+            CreatedAt(Asc) => requests.sort_by(|a, b| a.1.created_at.cmp(&b.1.created_at)),
+            CreatedAt(Desc) => requests.sort_by(|a, b| b.1.created_at.cmp(&a.1.created_at)),
+        }
+        requests
     }
 }
 
