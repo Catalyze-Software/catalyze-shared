@@ -30,7 +30,6 @@ impl Display for TopicKind {
 
 #[derive(Clone, Debug, CandidType, Deserialize, Serialize)]
 pub struct Topic {
-    pub id: u64,
     pub kind: TopicKind,
     pub value: String,
 }
@@ -38,8 +37,14 @@ pub struct Topic {
 pub type TopicEntry = (u64, Topic);
 
 impl From<((u64, String), TopicKind)> for Topic {
-    fn from(((id, value), kind): ((u64, String), TopicKind)) -> Self {
-        Self { id, kind, value }
+    fn from(((_id, value), kind): ((u64, String), TopicKind)) -> Self {
+        Self { kind, value }
+    }
+}
+
+impl Topic {
+    pub fn new(kind: TopicKind, value: String) -> Self {
+        Self { kind, value }
     }
 }
 
