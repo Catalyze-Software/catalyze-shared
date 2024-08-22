@@ -12,4 +12,11 @@ where
     V: candid::CandidType,
 {
     fn matches(&self, key: &K, value: &V) -> bool;
+
+    fn to_vec(&self) -> Vec<Self>
+    where
+        Self: Sized,
+    {
+        vec![self.clone()]
+    }
 }
