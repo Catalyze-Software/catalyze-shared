@@ -138,6 +138,13 @@ where
     ) -> impl std::future::Future<Output = CanisterResult<(u64, V)>> + Sync + Send {
         async move { ic_call(self.canister_id()?, "insert", (value,)).await }
     }
+
+    fn insert_many(
+        &self,
+        list: Vec<V>,
+    ) -> impl std::future::Future<Output = CanisterResult<Vec<(u64, V)>>> + Sync + Send {
+        async move { ic_call(self.canister_id()?, "insert_many", (list,)).await }
+    }
 }
 
 pub trait StorageClientInsertableByKey<K, V, F, S>: StorageClient<K, V, F, S>
@@ -160,5 +167,12 @@ where
         value: V,
     ) -> impl std::future::Future<Output = CanisterResult<(K, V)>> + Sync + Send {
         async move { ic_call(self.canister_id()?, "insert", (key, value)).await }
+    }
+
+    fn insert_many(
+        &self,
+        list: Vec<(K, V)>,
+    ) -> impl std::future::Future<Output = CanisterResult<Vec<(K, V)>>> + Sync + Send {
+        async move { ic_call(self.canister_id()?, "insert_many", (list,)).await }
     }
 }
