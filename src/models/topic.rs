@@ -7,6 +7,10 @@ use crate::{str::eq_str, Sorter};
 
 use super::{api_error::ApiError, sort_direction::SortDirection};
 
+use crate::impl_storable_for;
+
+impl_storable_for!(Topic);
+
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, CandidType, Deserialize, Serialize)]
 pub enum TopicKind {
     Tag,
