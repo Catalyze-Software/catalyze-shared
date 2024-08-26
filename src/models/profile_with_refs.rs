@@ -372,10 +372,4 @@ impl Filter<Principal, ProfileWithRefs> for ProfileFilter {
     }
 }
 
-impl From<ProfileFilter> for Vec<ProfileFilter> {
-    fn from(val: ProfileFilter) -> Self {
-        vec![val]
-    }
-}
-
 pub type ProfileWithRefsEntry = (Principal, ProfileWithRefs);
