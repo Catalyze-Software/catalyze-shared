@@ -177,9 +177,3 @@ impl Filter<u64, Report> for ReportFilter {
         }
     }
 }
-
-impl From<ReportFilter> for Vec<ReportFilter> {
-    fn from(val: ReportFilter) -> Self {
-        vec![val]
-    }
-}

@@ -346,9 +346,3 @@ impl EventResponse {
         }
     }
 }
-
-impl From<EventFilter> for Vec<EventFilter> {
-    fn from(val: EventFilter) -> Self {
-        vec![val]
-    }
-}

@@ -436,10 +436,4 @@ impl Filter<u64, GroupWithMembers> for GroupFilter {
     }
 }
 
-impl From<GroupFilter> for Vec<GroupFilter> {
-    fn from(val: GroupFilter) -> Self {
-        vec![val]
-    }
-}
-
 pub type GroupWithMembersEntry = (u64, GroupWithMembers);

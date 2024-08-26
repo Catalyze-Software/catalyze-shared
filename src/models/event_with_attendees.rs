@@ -445,11 +445,5 @@ impl EventResponse {
     }
 }
 
-impl From<EventFilter> for Vec<EventFilter> {
-    fn from(val: EventFilter) -> Self {
-        vec![val]
-    }
-}
-
 pub type EventWithAttendeesEntry = (u64, EventWithAttendees);
 pub type Attendee = (Principal, Vec<u64>);
