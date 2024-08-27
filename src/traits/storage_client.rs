@@ -6,7 +6,7 @@ use crate::{
 
 use super::{CellStorage, Filter, Sorter, StaticCellStorageRef};
 
-pub trait StorageClient<K, V, F, S>: Default + Send + Sync
+pub trait StorageClient<K, V, F, S>: Send + Sync
 where
     K: 'static
         + candid::CandidType
