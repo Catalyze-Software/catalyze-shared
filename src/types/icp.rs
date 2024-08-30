@@ -9,3 +9,4 @@ pub type Memory = VirtualMemory<DefaultMemoryImpl>;
 pub type StorageRef<K, V> = RefCell<StableBTreeMap<K, V, Memory>>;
 pub type StaticStorageRef<K, V> = &'static LocalKey<StorageRef<K, V>>;
 pub type MemoryManagerStorage = RefCell<MemoryManager<DefaultMemoryImpl>>;
+pub type StaticMemoryManagerStorage = &'static LocalKey<RefCell<MemoryManager<DefaultMemoryImpl>>>;
