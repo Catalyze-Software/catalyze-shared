@@ -110,4 +110,5 @@ impl UserActivity {
 pub struct RewardDataPackage {
     pub group_member_counts: Vec<GroupReward>,
     pub user_activity: Vec<UserActivity>,
+    pub user_referrals: Vec<(Principal, Principal)>,
 }
