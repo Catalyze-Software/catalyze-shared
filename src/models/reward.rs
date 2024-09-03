@@ -6,8 +6,6 @@ use serde::{Deserialize, Serialize};
 
 use crate::impl_storable_for;
 
-use super::referral_info::ReferralInfo;
-
 impl_storable_for!(RewardableActivity);
 
 #[derive(Clone, Default, Debug, CandidType, Deserialize, Serialize)]
@@ -56,7 +54,7 @@ pub struct RewardableActivityResponse {
 pub enum Activity {
     GroupMemberCount(u64),
     UserActivity(Principal),
-    UserReferral(Principal, Principal),
+    UserReferral(Principal),
 }
 
 impl Activity {
@@ -74,7 +72,7 @@ impl fmt::Display for Activity {
         match self {
             Activity::GroupMemberCount(_) => write!(f, "group_member_count"),
             Activity::UserActivity(_) => write!(f, "user_activity"),
-            Activity::UserReferral(_, _) => write!(f, "user_referral"),
+            Activity::UserReferral(_) => write!(f, "user_referral"),
         }
     }
 }
@@ -112,5 +110,5 @@ impl UserActivity {
 pub struct RewardDataPackage {
     pub group_member_counts: Vec<GroupReward>,
     pub user_activity: Vec<UserActivity>,
-    pub user_referrals: Vec<ReferralInfo>,
+    pub user_referrals: Vec<Principal>,
 }
