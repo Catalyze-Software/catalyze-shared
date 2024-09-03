@@ -54,6 +54,7 @@ pub struct RewardableActivityResponse {
 pub enum Activity {
     GroupMemberCount(u64),
     UserActivity(Principal),
+    UserReferral(Principal, Principal),
 }
 
 impl Activity {
@@ -71,6 +72,7 @@ impl fmt::Display for Activity {
         match self {
             Activity::GroupMemberCount(_) => write!(f, "group_member_count"),
             Activity::UserActivity(_) => write!(f, "user_activity"),
+            Activity::UserReferral(_, _) => write!(f, "user_referral"),
         }
     }
 }
