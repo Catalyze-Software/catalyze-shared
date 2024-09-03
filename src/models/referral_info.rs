@@ -11,3 +11,13 @@ pub struct ReferralInfo {
     pub referral: Principal,
     pub created_at: u64,
 }
+
+impl ReferralInfo {
+    pub fn new(referrer: Principal, referral: Principal, created_at: u64) -> Self {
+        Self {
+            referrer,
+            referral,
+            created_at,
+        }
+    }
+}

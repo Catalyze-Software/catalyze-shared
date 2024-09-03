@@ -6,6 +6,8 @@ use serde::{Deserialize, Serialize};
 
 use crate::impl_storable_for;
 
+use super::referral_info::ReferralInfo;
+
 impl_storable_for!(RewardableActivity);
 
 #[derive(Clone, Default, Debug, CandidType, Deserialize, Serialize)]
@@ -110,5 +112,5 @@ impl UserActivity {
 pub struct RewardDataPackage {
     pub group_member_counts: Vec<GroupReward>,
     pub user_activity: Vec<UserActivity>,
-    pub user_referrals: Vec<(Principal, Principal)>,
+    pub user_referrals: Vec<ReferralInfo>,
 }
