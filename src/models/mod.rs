@@ -48,4 +48,5 @@ pub mod websocket_message;
 
 pub mod log;
 pub mod referral;
+pub mod referral_info;
 pub mod reward;
