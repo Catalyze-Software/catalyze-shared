@@ -146,27 +146,12 @@ impl ProfileWithRefs {
             .insert(principal, Referral::default());
     }
 
-    pub fn renew_referral(&mut self, principal: Principal) {
-        if let Some(referral) = self.references.referrals.get_mut(&principal) {
-            *referral = referral.renew();
-        }
-    }
-
-    pub fn accept_referral(&mut self, principal: Principal) {
-        if let Some(referral) = self.references.referrals.get_mut(&principal) {
-            *referral = referral.accept();
-        }
+    pub fn remove_referral(&mut self, principal: Principal) {
+        self.references.referrals.remove(&principal);
     }
 
     pub fn is_referral_exists(&self, principal: Principal) -> bool {
         self.references.referrals.contains_key(&principal)
-    }
-
-    pub fn is_referral_accepted(&self, principal: Principal) -> bool {
-        self.references
-            .referrals
-            .get(&principal)
-            .map_or(false, |referral| referral.is_accepted())
     }
 
     pub fn is_referral_expired(&self, principal: Principal) -> bool {
