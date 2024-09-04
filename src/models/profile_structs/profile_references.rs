@@ -3,7 +3,9 @@ use std::collections::HashMap;
 use candid::{CandidType, Principal};
 use serde::{Deserialize, Serialize};
 
-use crate::{subject::Subject, user_notifications::UserNotifications, wallet::Wallet};
+use crate::{
+    referral::Referral, subject::Subject, user_notifications::UserNotifications, wallet::Wallet,
+};
 
 #[derive(Clone, CandidType, Serialize, Deserialize, Debug, Default)]
 pub struct ProfileReferences {
@@ -17,4 +19,6 @@ pub struct ProfileReferences {
     pub notifications: UserNotifications,
     pub wallets: HashMap<String, Wallet>,
     pub relations: HashMap<Principal, String>,
+    pub referrals: HashMap<Principal, Referral>,
+    pub referrer: Option<Principal>,
 }

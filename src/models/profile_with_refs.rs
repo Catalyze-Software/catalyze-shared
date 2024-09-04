@@ -19,6 +19,7 @@ use super::{
         profile_documents::ProfileDocuments, profile_metadata::ProfileMetadata,
         profile_references::ProfileReferences,
     },
+    referral::Referral,
     subject::Subject,
     wallet::WalletResponse,
 };
@@ -138,6 +139,27 @@ impl ProfileWithRefs {
     pub fn remove_event(&mut self, event_id: u64) {
         self.references.events.retain(|id| id != &event_id);
     }
+
+    pub fn add_referral(&mut self, principal: Principal) {
+        self.references
+            .referrals
+            .insert(principal, Referral::default());
+    }
+
+    pub fn remove_referral(&mut self, principal: Principal) {
+        self.references.referrals.remove(&principal);
+    }
+
+    pub fn is_referral_exists(&self, principal: Principal) -> bool {
+        self.references.referrals.contains_key(&principal)
+    }
+
+    pub fn is_referral_expired(&self, principal: Principal) -> bool {
+        self.references
+            .referrals
+            .get(&principal)
+            .map_or(false, |referral| referral.is_expired())
+    }
 }
 
 pub type ProfileEntry = (Principal, ProfileWithRefs);
@@ -150,6 +172,7 @@ pub struct PostProfile {
     pub last_name: String,
     pub privacy: Privacy,
     pub extra: String,
+    pub referrer: Option<Principal>,
 }
 
 #[derive(Clone, Debug, Default, CandidType, Deserialize)]
@@ -203,6 +226,7 @@ pub struct ProfileResponse {
     pub extra: Option<String>,
     pub updated_on: u64,
     pub created_on: u64,
+    pub referrer: Option<Principal>,
 }
 
 impl ProfileResponse {
@@ -247,6 +271,7 @@ impl ProfileResponse {
             extra: profile.extra,
             updated_on: profile.updated_on,
             created_on: profile.created_on,
+            referrer: profile.references.referrer,
         }
     }
 
@@ -257,47 +282,7 @@ impl ProfileResponse {
 
 impl From<ProfileEntry> for ProfileResponse {
     fn from((principal, profile): ProfileEntry) -> Self {
-        let wallets = profile
-            .references
-            .wallets
-            .into_iter()
-            .map(|(address, wallet)| WalletResponse {
-                provider: wallet.provider,
-                address,
-                is_primary: wallet.is_primary,
-            })
-            .collect();
-
-        Self {
-            principal,
-            username: profile.metadata.username,
-            display_name: profile.metadata.display_name,
-            about: profile.metadata.about,
-            city: profile.metadata.city,
-            country: profile.metadata.country,
-            website: profile.metadata.website,
-            skills: profile.references.skills,
-            interests: profile.references.interests,
-            causes: profile.references.causes,
-            email: profile.metadata.email,
-            application_role: profile.application_role,
-            first_name: profile.metadata.first_name,
-            last_name: profile.metadata.last_name,
-            privacy: profile.privacy,
-            date_of_birth: profile.metadata.date_of_birth,
-            state_or_province: profile.metadata.state_or_province,
-            profile_image: profile.metadata.profile_image,
-            banner_image: profile.metadata.banner_image,
-            code_of_conduct: profile.documents.code_of_conduct,
-            privacy_policy: profile.documents.privacy_policy,
-            terms_of_service: profile.documents.terms_of_service,
-            wallets,
-            pinned: profile.references.pinned,
-            starred: profile.references.starred,
-            extra: profile.extra,
-            updated_on: profile.updated_on,
-            created_on: profile.created_on,
-        }
+        Self::new(principal, profile)
     }
 }
 
