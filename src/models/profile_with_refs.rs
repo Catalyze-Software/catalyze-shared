@@ -160,6 +160,27 @@ impl ProfileWithRefs {
             .get(&principal)
             .map_or(false, |referral| referral.is_expired())
     }
+
+    pub fn is_filled(&self) -> bool {
+        let metadata = self.metadata.clone();
+
+        let is_string_content_filled = vec![
+            metadata.first_name,
+            metadata.last_name,
+            metadata.email,
+            metadata.country,
+            metadata.about,
+        ]
+        .into_iter()
+        .all(|s| !s.is_empty());
+
+        let is_images_filled =
+            !metadata.profile_image.is_empty() && !metadata.banner_image.is_empty();
+
+        let is_interests_filled = self.references.interests.len() >= 3;
+
+        is_string_content_filled && is_images_filled && is_interests_filled
+    }
 }
 
 pub type ProfileEntry = (Principal, ProfileWithRefs);
