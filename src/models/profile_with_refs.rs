@@ -177,7 +177,7 @@ impl ProfileWithRefs {
         let is_images_filled =
             !metadata.profile_image.is_empty() && !metadata.banner_image.is_empty();
 
-        let is_interests_filled = !self.references.interests.len() >= 3;
+        let is_interests_filled = self.references.interests.len() >= 3;
 
         is_string_content_filled && is_images_filled && is_interests_filled
     }
