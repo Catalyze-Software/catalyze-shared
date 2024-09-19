@@ -35,11 +35,22 @@ where
         async move { ic_call(self.canister_id()?, "size", ()).await }
     }
 
+    fn _raw_size(&self) -> impl std::future::Future<Output = CanisterResult<u64>> + Sync + Send {
+        async move { ic_call(self.canister_id()?, "_raw_size", ()).await }
+    }
+
     fn get(
         &self,
         id: K,
     ) -> impl std::future::Future<Output = CanisterResult<(K, V)>> + Sync + Send {
         async move { ic_call(self.canister_id()?, "get", (id,)).await }
+    }
+
+    fn _raw_get(
+        &self,
+        id: K,
+    ) -> impl std::future::Future<Output = CanisterResult<(K, V)>> + Sync + Send {
+        async move { ic_call(self.canister_id()?, "_raw_get", (id,)).await }
     }
 
     fn get_many(
@@ -49,10 +60,23 @@ where
         async move { ic_call(self.canister_id()?, "get_many", (keys,)).await }
     }
 
+    fn _raw_get_many(
+        &self,
+        keys: Vec<K>,
+    ) -> impl std::future::Future<Output = CanisterResult<Vec<(K, V)>>> + Sync + Send {
+        async move { ic_call(self.canister_id()?, "_raw_get_many", (keys,)).await }
+    }
+
     fn get_all(
         &self,
     ) -> impl std::future::Future<Output = CanisterResult<Vec<(K, V)>>> + Sync + Send {
         async move { ic_call(self.canister_id()?, "get_all", ()).await }
+    }
+
+    fn _raw_get_all(
+        &self,
+    ) -> impl std::future::Future<Output = CanisterResult<Vec<(K, V)>>> + Sync + Send {
+        async move { ic_call(self.canister_id()?, "_raw_get_all", ()).await }
     }
 
     fn get_paginated(
@@ -67,6 +91,18 @@ where
             ic_call(self.canister_id()?, "get_paginated", args).await
         }
     }
+    fn _raw_get_paginated(
+        &self,
+        limit: usize,
+        page: usize,
+        sort: S,
+    ) -> impl std::future::Future<Output = CanisterResult<PagedResponse<(K, V)>>> + Sync + Send
+    {
+        async move {
+            let args = (limit, page, sort);
+            ic_call(self.canister_id()?, "_raw_get_paginated", args).await
+        }
+    }
 
     fn find(
         &self,
@@ -75,8 +111,6 @@ where
         async move { ic_call(self.canister_id()?, "find", (filters,)).await }
     }
 
-    // ONLY INTEGRATED FOR PROFILES AT THE MOMENT
-    // REMOVES COMPOSITE_QUERY
     fn _raw_find(
         &self,
         filters: Vec<F>,
@@ -91,6 +125,13 @@ where
         async move { ic_call(self.canister_id()?, "filter", (filters,)).await }
     }
 
+    fn _raw_filter(
+        &self,
+        filters: Vec<F>,
+    ) -> impl std::future::Future<Output = CanisterResult<Vec<(K, V)>>> + Sync + Send {
+        async move { ic_call(self.canister_id()?, "_raw_filter", (filters,)).await }
+    }
+
     fn filter_paginated(
         &self,
         limit: usize,
@@ -102,6 +143,20 @@ where
         async move {
             let args = (limit, page, sort, filters);
             ic_call(self.canister_id()?, "filter_paginated", args).await
+        }
+    }
+
+    fn _raw_filter_paginated(
+        &self,
+        limit: usize,
+        page: usize,
+        sort: S,
+        filters: Vec<F>,
+    ) -> impl std::future::Future<Output = CanisterResult<PagedResponse<(K, V)>>> + Sync + Send
+    {
+        async move {
+            let args = (limit, page, sort, filters);
+            ic_call(self.canister_id()?, "_raw_filter_paginated", args).await
         }
     }
 
