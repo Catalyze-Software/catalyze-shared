@@ -75,6 +75,15 @@ where
         async move { ic_call(self.canister_id()?, "find", (filters,)).await }
     }
 
+    // ONLY INTEGRATED FOR PROFILES AT THE MOMENT
+    // REMOVES COMPOSITE_QUERY
+    fn _raw_find(
+        &self,
+        filters: Vec<F>,
+    ) -> impl std::future::Future<Output = CanisterResult<Option<(K, V)>>> + Sync + Send {
+        async move { ic_call(self.canister_id()?, "_raw_find", (filters,)).await }
+    }
+
     fn filter(
         &self,
         filters: Vec<F>,
