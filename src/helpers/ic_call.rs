@@ -3,7 +3,7 @@ use serde::de::DeserializeOwned;
 
 use crate::{api_error::ApiError, CanisterCallResult, CanisterResult};
 
-pub async fn ic_call<A: ArgumentEncoder, R: candid::CandidType + DeserializeOwned>(
+pub async fn ic_call<A: ArgumentEncoder, R: candid::CandidType + DeserializeOwned + Send + Sync>(
     canister: Principal,
     method: &str,
     args: A,
