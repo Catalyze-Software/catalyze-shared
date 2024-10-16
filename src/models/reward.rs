@@ -114,4 +114,5 @@ pub struct RewardDataPackage {
     pub user_activity: Vec<UserActivity>,
     pub user_referrals: Vec<Principal>,
     pub filled_profiles: Vec<Principal>,
+    pub first_group_joined: Vec<Principal>,
 }
