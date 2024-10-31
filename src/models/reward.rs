@@ -111,7 +111,6 @@ impl UserActivity {
 #[derive(CandidType, Deserialize, Clone)]
 pub struct RewardDataPackage {
     pub group_member_counts: Vec<GroupReward>,
-    pub user_activity: Vec<UserActivity>,
     pub user_referrals: Vec<Principal>,
     pub filled_profiles: Vec<Principal>,
     pub first_group_joined: Vec<Principal>,
